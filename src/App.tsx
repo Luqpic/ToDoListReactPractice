@@ -1,4 +1,5 @@
 import './App.css'
+import TaskList from './components/task'
 
 
 function App() {
@@ -12,49 +13,10 @@ function App() {
         <button className="add-btn">ADD</button>
       </div>
 
-      <ul className="task-list">
+      <TaskList taskName='Task 1' />
+      <TaskList taskName='Task 2' />
+      <TaskList taskName='Task 3' />
 
-        <li className="task-item">
-          <span className="task-text">Task 1</span>
-          <div className="task-actions">
-            <button className="delete-btn">Delete</button>
-            <button className="edit-btn">Edit</button>
-          </div>
-        </li>
-
-        <li className="task-item">
-          <span className="task-text">Task 2</span>
-          <div className="task-actions">
-            <button className="delete-btn">Delete</button>
-            <button className="edit-btn">Edit</button>
-          </div>
-        </li>
-
-        <li className="task-item">
-          <span className="task-text">Task 3</span>
-          <div className="task-actions">
-            <button className="delete-btn">Delete</button>
-            <button className="edit-btn">Edit</button>
-          </div>
-        </li>
-
-        <li className="task-item">
-          <span className="task-text">Task 4</span>
-          <div className="task-actions">
-            <button className="delete-btn">Delete</button>
-            <button className="edit-btn">Edit</button>
-          </div>
-        </li>
-
-        <li className="task-item">
-          <span className="task-text">Task 5</span>
-          <div className="task-actions">
-            <button className="delete-btn">Delete</button>
-            <button className="edit-btn">Edit</button>
-          </div>
-        </li>
-
-      </ul>
     </div>
   )
 }
