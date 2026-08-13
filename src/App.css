@@ -1,57 +1,62 @@
 * {
-    box-sizing: border-box;
-    background-color: #ffff;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #ffffff;
 }
 
 .todo-app {
-    max-width: 600px;
-    margin: 50px auto;
-    padding: 0 20px;
-
+  max-width: 600px;
+  margin: 50px auto;
+  padding: 0 20px;
 }
 
 h1 {
-    text-align: center;
-    font-size: 3rem;
-    color: #000000;
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 20px;
-    margin-bottom: 30px;
-    text-transform: uppercase;
+  text-align: center;
+  font-size: 3rem;
+  color: #000000;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 20px;
+  margin-bottom: 30px;
+  text-transform: uppercase;
 }
 
 .input-section {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+  background-color: #ffffff;
 }
 
 .input-section input {
-    padding: 15px;
-    font-size: 1.1rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    outline: none;
-    margin-bottom: 15px;
+  padding: 15px;
+  font-size: 1.1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  outline: none;
+  margin-bottom: 15px;
+  background-color: #ffffff00;
+  color: #000000;
 }
 
 .input-section input:focus {
-    border-color: #aaa;
+  border-color: #aaa;
 }
 
 .add-btn {
-    background-color: #262a2e;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: bold;
-    width: fit-content;
-    position: relative;
+  background-color: #262a2e;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  width: fit-content;
+  position: relative;
 }
 
 .add-btn:hover {
-    background-color: #15181a;
+  background-color: #15181a;
 }
