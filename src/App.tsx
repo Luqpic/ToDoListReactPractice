@@ -1,8 +1,6 @@
-import './App.css'
-
+import "./App.css";
 
 function App() {
-
   return (
     <div className="todo-app">
       <h1>TODOLIST</h1>
@@ -13,7 +11,6 @@ function App() {
       </div>
 
       <ul className="task-list">
-
         <li className="task-item">
           <span className="task-text">Task 1</span>
           <div className="task-actions">
@@ -53,10 +50,9 @@ function App() {
             <button className="edit-btn">Edit</button>
           </div>
         </li>
-
       </ul>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
