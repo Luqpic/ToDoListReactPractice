@@ -1,21 +1,51 @@
 import "./task.css";
+import { useState } from "react";
 
 interface props {
-  taskname: string;
+  task: {
+    id: number;
+    text: string;
+  };
+  onDelete: (id: number) => void;
+  onEdit: (id: number, newTask: string) => void;
 }
 
-function tasklist({ taskname }: props) {
+function TaskList({ task, onDelete, onEdit }: props) {
+  const [isEditing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState(task.text);
+
+  const handleSave = () => {
+    onEdit(task.id, editValue);
+    setEditing(false);
+  };
+
   return (
-    <ul className="task-list">
-      <li className="task-item">
-        <span className="task-text">{taskname}</span>
-        <div className="task-actions">
-          <button className="delete-btn">Delete</button>
-          <button className="edit-btn">Edit</button>
-        </div>
-      </li>
-    </ul>
+    <li className="task-item">
+      {isEditing ? (
+        <input
+          type="text"
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+        />
+      ) : (
+        <span className="task-text">{task.text}</span>
+      )}
+      <div className="task-actions">
+        <button className="delete-btn" onClick={() => onDelete(task.id)}>
+          Delete
+        </button>
+        {isEditing ? (
+          <button className="edit-btn" onClick={handleSave}>
+            Save
+          </button>
+        ) : (
+          <button className="edit-btn" onClick={() => setEditing(true)}>
+            Edit
+          </button>
+        )}
+      </div>
+    </li>
   );
 }
 
-export default tasklist;
+export default TaskList;

@@ -60,3 +60,13 @@ h1 {
 .add-btn:hover {
   background-color: #15181a;
 }
+
+.watermark {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  color: #000;
+  opacity: 0.3;
+  font-size: 14px;
+  user-select: none;
+}
