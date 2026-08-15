@@ -1,14 +1,29 @@
 import "./App.css";
 import TaskList from "./components/task.tsx";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+interface Task {
+  id: number;
+  text: string;
+  completed: boolean;
+}
+
+const STORAGE_KEY = "todo-tasks";
 
 function App() {
   const [input, setInput] = useState("");
-  const [task, setTask] = useState<{ id: number; text: string }[]>([]);
+  const [task, setTask] = useState<Task[]>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(task));
+  }, [task]);
 
   const handleAddTask = () => {
     if (input.trim() === "") return;
-    const newTask = { id: Date.now(), text: input };
+    const newTask = { id: Date.now(), text: input, completed: false };
     setTask([...task, newTask]);
     setInput("");
   };
@@ -16,16 +31,6 @@ function App() {
   const deleteTask = (taskId: number) => {
     const updatedTasks = task.filter((task) => task.id !== taskId);
     setTask(updatedTasks);
-    {
-      task.map((task) => (
-        <TaskList
-          key={task.id}
-          task={task}
-          onDelete={deleteTask}
-          onEdit={editTask}
-        />
-      ));
-    }
   };
 
   const editTask = (taskId: number, newText: string) => {
@@ -35,6 +40,13 @@ function App() {
       }
       return task;
     });
+    setTask(updatedTasks);
+  };
+
+  const toggleComplete = (taskId: number) => {
+    const updatedTasks = task.map((task) =>
+      task.id === taskId ? { ...task, completed: !task.completed } : task
+    );
     setTask(updatedTasks);
   };
 
@@ -48,18 +60,20 @@ function App() {
           placeholder="add item . . ."
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
         />
         <button className="add-btn" onClick={handleAddTask}>
           ADD
         </button>
       </div>
       <ul className="task-list">
-        {task.map((task, index) => (
+        {task.map((task) => (
           <TaskList
-            key={index}
+            key={task.id}
             task={task}
             onDelete={deleteTask}
             onEdit={editTask}
+            onToggle={toggleComplete}
           />
         ))}
       </ul>
