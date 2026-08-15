@@ -16,6 +16,16 @@ function App() {
   const deleteTask = (taskId: number) => {
     const updatedTasks = task.filter((task) => task.id !== taskId);
     setTask(updatedTasks);
+    {
+      task.map((task) => (
+        <TaskList
+          key={task.id}
+          task={task}
+          onDelete={deleteTask}
+          onEdit={editTask}
+        />
+      ));
+    }
   };
 
   const editTask = (taskId: number, newText: string) => {
