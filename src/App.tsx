@@ -17,11 +17,19 @@ function App() {
     return stored ? JSON.parse(stored) : [];
   });
 
+  const [filter, setFilter] = useState("all");
+
+  const filteredTask = task.filter((task) => {
+    if (filter === "all") return true;
+    if (filter === "active") return !task.completed;
+    if (filter === "completed") return task.completed;
+  });
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(task));
   }, [task]);
 
-  const handleAddTask = () => {
+  const addtask = () => {
     if (input.trim() === "") return;
     const newTask = { id: Date.now(), text: input, completed: false };
     setTask([...task, newTask]);
@@ -45,7 +53,7 @@ function App() {
 
   const toggleComplete = (taskId: number) => {
     const updatedTasks = task.map((task) =>
-      task.id === taskId ? { ...task, completed: !task.completed } : task
+      task.id === taskId ? { ...task, completed: !task.completed } : task,
     );
     setTask(updatedTasks);
   };
@@ -60,14 +68,25 @@ function App() {
           placeholder="add item . . ."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
+          onKeyDown={(e) => e.key === "Enter" && addtask()}
         />
-        <button className="add-btn" onClick={handleAddTask}>
+        <div className="filter-section">
+          <button className="filter-btn" onClick={() => setFilter("all")}>
+            All
+          </button>
+          <button className="filter-btn" onClick={() => setFilter("active")}>
+            Active
+          </button>
+          <button className="filter-btn" onClick={() => setFilter("completed")}>
+            Completed
+          </button>
+        </div>
+        <button className="add-btn" onClick={addtask}>
           ADD
         </button>
       </div>
       <ul className="task-list">
-        {task.map((task) => (
+        {filteredTask.map((task) => (
           <TaskList
             key={task.id}
             task={task}
