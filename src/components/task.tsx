@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface props {
   task: {
@@ -27,15 +27,15 @@ function TaskList({ task, onDelete, onEdit, onToggle }: props) {
   };
 
   return (
-    <Card className="bg-gray-200 m-1">
-      <CardContent className="flex items-center gap-3">
+    <Card className="bg-gray-200 m-1 shadow-2xs ">
+      <CardContent className="flex items-center gap-3 h-10">
         <Checkbox
           checked={task.completed}
           onCheckedChange={() => onToggle(task.id)}
         />
         {isEditing ? (
           <Input
-            className="flex-1 h-auto py-1 text-[1.1rem] bg-background"
+            className="flex-1 h-auto py-1 md:text-[1.1rem] text-[1.1rem] bg-background"
             type="text"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}

@@ -4,6 +4,15 @@ import { useState, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+} from "@/components/ui/select";
 
 interface Task {
   id: number;
@@ -73,11 +82,28 @@ function App() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addtask()}
         />
-        <div className="filter-section">
-          <Button onClick={() => setFilter("all")}>All</Button>
-          <Button onClick={() => setFilter("active")}>Active</Button>
-          <Button onClick={() => setFilter("completed")}>Completed</Button>
-        </div>
+        <Select>
+          <SelectTrigger className="w-50 max-w-50 h-10 m-1 flex self-center">
+            <SelectValue placeholder="Filter" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Filter</SelectLabel>
+              <SelectItem value="all" onClick={() => setFilter("all")}>
+                All
+              </SelectItem>
+              <SelectItem value="active" onClick={() => setFilter("active")}>
+                Active
+              </SelectItem>
+              <SelectItem
+                value="completed"
+                onClick={() => setFilter("completed")}
+              >
+                Completed
+              </SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
         <Button className="w-50 h-10 m-1 flex self-center" onClick={addtask}>
           ADD
         </Button>
