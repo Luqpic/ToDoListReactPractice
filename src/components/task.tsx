@@ -1,6 +1,11 @@
 import "./task.css";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+
 interface props {
   task: {
     id: number;
@@ -22,40 +27,40 @@ function TaskList({ task, onDelete, onEdit, onToggle }: props) {
   };
 
   return (
-    <li className="task-item">
-      <input
-        type="checkbox"
-        className="task-checkbox"
-        checked={task.completed}
-        onChange={() => onToggle(task.id)}
-      />
-      {isEditing ? (
-        <input
-          type="text"
-          className="task-edit-input"
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
+    <Card className="bg-gray-200 m-1">
+      <CardContent className="flex items-center gap-3">
+        <Checkbox
+          checked={task.completed}
+          onCheckedChange={() => onToggle(task.id)}
         />
-      ) : (
-        <span className={`task-text ${task.completed ? "completed" : ""}`}>
-          {task.text}
-        </span>
-      )}
-      <div className="task-actions">
-        <button className="delete-btn" onClick={() => onDelete(task.id)}>
-          Delete
-        </button>
         {isEditing ? (
-          <button className="edit-btn" onClick={handleSave}>
-            Save
-          </button>
+          <Input
+            className="flex-1 h-auto py-1 text-[1.1rem] bg-background"
+            type="text"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+          />
         ) : (
-          <button className="edit-btn" onClick={() => setEditing(true)}>
-            Edit
-          </button>
+          <span className={`task-text ${task.completed ? "completed" : ""}`}>
+            {task.text}
+          </span>
         )}
-      </div>
-    </li>
+        <div className="task-actions">
+          <Button variant="destructive" onClick={() => onDelete(task.id)}>
+            Delete
+          </Button>
+          {isEditing ? (
+            <Button variant="outline" onClick={handleSave}>
+              Save
+            </Button>
+          ) : (
+            <Button variant="secondary" onClick={() => setEditing(true)}>
+              Edit
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
