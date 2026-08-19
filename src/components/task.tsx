@@ -1,4 +1,3 @@
-import "./task.css";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -27,8 +26,8 @@ function TaskList({ task, onDelete, onEdit, onToggle }: props) {
   };
 
   return (
-    <Card className="bg-gray-200 m-1 shadow-2xs ">
-      <CardContent className="flex items-center gap-3 h-10">
+    <Card size="sm" className="bg-muted ring-0">
+      <CardContent className="flex items-center gap-3">
         <Checkbox
           checked={task.completed}
           onCheckedChange={() => onToggle(task.id)}
@@ -41,11 +40,15 @@ function TaskList({ task, onDelete, onEdit, onToggle }: props) {
             onChange={(e) => setEditValue(e.target.value)}
           />
         ) : (
-          <span className={`task-text ${task.completed ? "completed" : ""}`}>
+          <span
+            className={`flex-1 text-[1.1rem] ${
+              task.completed ? "line-through text-muted-foreground" : ""
+            }`}
+          >
             {task.text}
           </span>
         )}
-        <div className="task-actions">
+        <div className="flex gap-2 shrink-0">
           <Button variant="destructive" onClick={() => onDelete(task.id)}>
             Delete
           </Button>
