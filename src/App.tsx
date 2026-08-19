@@ -1,6 +1,7 @@
 import "./App.css";
 import TaskList from "./components/task.tsx";
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 interface Task {
   id: number;
@@ -81,9 +82,7 @@ function App() {
             Completed
           </button>
         </div>
-        <button className="add-btn" onClick={addtask}>
-          ADD
-        </button>
+        <Button onClick={addtask}>ADD</Button>
       </div>
       <ul className="task-list">
         {filteredTask.map((task) => (
