@@ -13,6 +13,7 @@ import {
   SelectItem,
   SelectLabel,
 } from "@/components/ui/select";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 
 interface Task {
   id: number;
@@ -34,8 +35,8 @@ function App() {
 
   const filteredTask = task
     .filter((t) => {
-      if (filter === "active") return !t.completed;
-      if (filter === "completed") return t.completed;
+      if (filter === "Active") return !t.completed;
+      if (filter === "Completed") return t.completed;
       return true;
     })
     .filter((t) => t.text.toLowerCase().includes(search.toLowerCase()));
@@ -74,10 +75,11 @@ function App() {
   };
 
   return (
-    <div className="todo-app">
-      <h1>TODOLIST</h1>
-
-      <div className="input-section">
+    <Card className="bg-black w-auto">
+      <CardHeader className="todo-app">
+        <h1>TODOLIST</h1>
+      </CardHeader>
+      <CardContent className="input-section">
         <Input
           type="text"
           placeholder="add item . . ."
@@ -95,19 +97,19 @@ function App() {
           onChange={(e) => setSearch(e.target.value)}
         />
         <Select value={filter} onValueChange={(v) => setFilter(v as string)}>
-          <SelectTrigger className="w-50 h-10 self-center">
+          <SelectTrigger className="w-50 h-10 self-center bg-white">
             <SelectValue placeholder="Filter" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
               <SelectLabel>Filter</SelectLabel>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="All">All</SelectItem>
+              <SelectItem value="Active">Active</SelectItem>
+              <SelectItem value="Completed">Completed</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
-      </div>
+      </CardContent>
       <ul className="task-list">
         {filteredTask.map((task) => (
           <TaskList
@@ -120,7 +122,7 @@ function App() {
         ))}
       </ul>
       <p className="watermark">Practicing React Project by Luqman Hayyan</p>
-    </div>
+    </Card>
   );
 }
 
