@@ -28,14 +28,17 @@ function App() {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
   });
+  const [search, setSearch] = useState("");
 
   const [filter, setFilter] = useState("all");
 
-  const filteredTask = task.filter((task) => {
-    if (filter === "all") return true;
-    if (filter === "active") return !task.completed;
-    if (filter === "completed") return task.completed;
-  });
+  const filteredTask = task
+    .filter((t) => {
+      if (filter === "active") return !t.completed;
+      if (filter === "completed") return t.completed;
+      return true;
+    })
+    .filter((t) => t.text.toLowerCase().includes(search.toLowerCase()));
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(task));
@@ -82,31 +85,28 @@ function App() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addtask()}
         />
-        <Select>
-          <SelectTrigger className="w-50 max-w-50 h-10 m-1 flex self-center">
+        <Button className="w-50 h-10 m-1  self-center" onClick={addtask}>
+          ADD
+        </Button>
+        <Input
+          type="text"
+          placeholder="search item . . ."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <Select value={filter} onValueChange={(v) => setFilter(v as string)}>
+          <SelectTrigger className="w-50 h-10 self-center">
             <SelectValue placeholder="Filter" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
               <SelectLabel>Filter</SelectLabel>
-              <SelectItem value="all" onClick={() => setFilter("all")}>
-                All
-              </SelectItem>
-              <SelectItem value="active" onClick={() => setFilter("active")}>
-                Active
-              </SelectItem>
-              <SelectItem
-                value="completed"
-                onClick={() => setFilter("completed")}
-              >
-                Completed
-              </SelectItem>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
-        <Button className="w-50 h-10 m-1 flex self-center" onClick={addtask}>
-          ADD
-        </Button>
       </div>
       <ul className="task-list">
         {filteredTask.map((task) => (
