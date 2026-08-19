@@ -27,21 +27,7 @@ h1 {
   flex-direction: column;
   margin-bottom: 20px;
   background-color: #ffffff;
-}
-
-.input-section input {
-  padding: 15px;
-  font-size: 1.1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  outline: none;
-  margin-bottom: 15px;
-  background-color: #ffffff00;
-  color: #000000;
-}
-
-.input-section input:focus {
-  border-color: #aaa;
+  gap: 20px;
 }
 
 .filter-btn {
