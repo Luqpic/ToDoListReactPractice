@@ -1,7 +1,9 @@
 import "./App.css";
 import TaskList from "./components/task.tsx";
 import { useState, useEffect } from "react";
+
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface Task {
   id: number;
@@ -64,7 +66,7 @@ function App() {
       <h1>TODOLIST</h1>
 
       <div className="input-section">
-        <input
+        <Input
           type="text"
           placeholder="add item . . ."
           value={input}
@@ -72,17 +74,13 @@ function App() {
           onKeyDown={(e) => e.key === "Enter" && addtask()}
         />
         <div className="filter-section">
-          <button className="filter-btn" onClick={() => setFilter("all")}>
-            All
-          </button>
-          <button className="filter-btn" onClick={() => setFilter("active")}>
-            Active
-          </button>
-          <button className="filter-btn" onClick={() => setFilter("completed")}>
-            Completed
-          </button>
+          <Button onClick={() => setFilter("all")}>All</Button>
+          <Button onClick={() => setFilter("active")}>Active</Button>
+          <Button onClick={() => setFilter("completed")}>Completed</Button>
         </div>
-        <Button onClick={addtask}>ADD</Button>
+        <Button className="w-50 h-10 m-1 flex self-center" onClick={addtask}>
+          ADD
+        </Button>
       </div>
       <ul className="task-list">
         {filteredTask.map((task) => (
