@@ -13,6 +13,13 @@ import {
   SelectItem,
   SelectLabel,
 } from "@/components/ui/select";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
 
 interface Task {
   id: number;
@@ -30,12 +37,12 @@ function App() {
   });
   const [search, setSearch] = useState("");
 
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("All");
 
   const filteredTask = task
     .filter((t) => {
-      if (filter === "active") return !t.completed;
-      if (filter === "completed") return t.completed;
+      if (filter === "Active") return !t.completed;
+      if (filter === "Completed") return t.completed;
       return true;
     })
     .filter((t) => t.text.toLowerCase().includes(search.toLowerCase()));
@@ -74,51 +81,68 @@ function App() {
   };
 
   return (
-    <div className="todo-app">
-      <h1>TODOLIST</h1>
+    <div className="min-h-screen bg-background flex justify-center px-4 py-12">
+      <Card className="w-full max-w-xl h-fit shadow-md">
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold tracking-tight uppercase">
+            Todolist
+          </CardTitle>
+          <CardDescription>Keeping track of whachtu doing </CardDescription>
+        </CardHeader>
 
-      <div className="input-section">
-        <Input
-          type="text"
-          placeholder="add item . . ."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && addtask()}
-        />
-        <Button className="w-50 h-10 m-1  self-center" onClick={addtask}>
-          ADD
-        </Button>
-        <Input
-          type="text"
-          placeholder="search item . . ."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <Select value={filter} onValueChange={(v) => setFilter(v as string)}>
-          <SelectTrigger className="w-50 h-10 self-center">
-            <SelectValue placeholder="Filter" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>Filter</SelectLabel>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </div>
-      <ul className="task-list">
-        {filteredTask.map((task) => (
-          <TaskList
-            key={task.id}
-            task={task}
-            onDelete={deleteTask}
-            onEdit={editTask}
-            onToggle={toggleComplete}
-          />
-        ))}
-      </ul>
+        <CardContent className="flex flex-col gap-5">
+          <div className="flex flex-col gap-2">
+            <Input
+              type="text"
+              placeholder="add item . . ."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addtask()}
+            />
+            <Button className="w-full h-10" onClick={addtask}>
+              ADD
+            </Button>
+          </div>
+
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              className="flex-1"
+              placeholder="search item . . ."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <Select
+              value={filter}
+              onValueChange={(v) => setFilter(v as string)}
+            >
+              <SelectTrigger className="w-32 shrink-0">
+                <SelectValue placeholder="Filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Filter</SelectLabel>
+                  <SelectItem value="All">All</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <ul className="flex flex-col gap-2">
+            {filteredTask.map((task) => (
+              <TaskList
+                key={task.id}
+                task={task}
+                onDelete={deleteTask}
+                onEdit={editTask}
+                onToggle={toggleComplete}
+              />
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
       <p className="watermark">Practicing React Project by Luqman Hayyan</p>
     </div>
   );

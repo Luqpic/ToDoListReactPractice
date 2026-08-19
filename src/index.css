@@ -6,10 +6,6 @@
 @custom-variant dark (&:is(.dark *));
 
 body {
-  margin: 0;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Oxygen", "Segoe UI", "Roboto", "Ubuntu",
-    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
