@@ -36,18 +36,21 @@ import {
   CardContent,
 } from "@/components/ui/card";
 
+import { useAuth } from "@/context/AuthContext";
+
 interface Task {
   id: number;
   text: string;
   completed: boolean;
 }
 
-const STORAGE_KEY = "todo-tasks";
-
 export default function TodoPage() {
+  const { user, logout } = useAuth();
+  const storageKey = `todo-tasks-${user!.id}`;
+
   const [input, setInput] = useState("");
   const [task, setTask] = useState<Task[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(storageKey);
     return stored ? JSON.parse(stored) : [];
   });
   const [search, setSearch] = useState("");
@@ -83,7 +86,7 @@ export default function TodoPage() {
   };
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(task));
+    localStorage.setItem(storageKey, JSON.stringify(task));
   }, [task]);
 
   const addtask = () => {
@@ -118,11 +121,16 @@ export default function TodoPage() {
   return (
     <div className="min-h-screen bg-background flex justify-center px-4 py-12">
       <Card className="w-full max-w-xl h-fit shadow-md">
-        <CardHeader>
-          <CardTitle className="text-2xl font-semibold tracking-tight uppercase">
-            Todolist
-          </CardTitle>
-          <CardDescription>Keeping track of whachtu doing </CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between">
+          <div>
+            <CardTitle className="text-2xl font-semibold tracking-tight uppercase">
+              Todolist
+            </CardTitle>
+            <CardDescription>Keeping track of whachtu doing </CardDescription>
+          </div>
+          <Button variant="outline" onClick={logout}>
+            Log out
+          </Button>
         </CardHeader>
 
         <CardContent className="flex flex-col gap-5">
