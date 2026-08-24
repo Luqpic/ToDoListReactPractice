@@ -87,7 +87,7 @@ export default function TodoPage() {
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(task));
-  }, [task]);
+  }, [task, storageKey]);
 
   const addtask = () => {
     if (input.trim() === "") return;
