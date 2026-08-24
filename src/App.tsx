@@ -1,6 +1,21 @@
 import "./App.css";
 import TaskList from "./components/task.tsx";
 import { useState, useEffect } from "react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +54,8 @@ function App() {
 
   const [filter, setFilter] = useState("All");
 
+  const canReorder = filter === "All" && search.trim() === "";
+
   const filteredTask = task
     .filter((t) => {
       if (filter === "Active") return !t.completed;
@@ -46,6 +63,24 @@ function App() {
       return true;
     })
     .filter((t) => t.text.toLowerCase().includes(search.toLowerCase()));
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setTask((prev) => {
+      const oldIndex = prev.findIndex((t) => t.id === active.id);
+      const newIndex = prev.findIndex((t) => t.id === over.id);
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  };
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(task));
@@ -130,17 +165,29 @@ function App() {
             </Select>
           </div>
 
-          <ul className="flex flex-col gap-2">
-            {filteredTask.map((task) => (
-              <TaskList
-                key={task.id}
-                task={task}
-                onDelete={deleteTask}
-                onEdit={editTask}
-                onToggle={toggleComplete}
-              />
-            ))}
-          </ul>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={filteredTask.map((t) => t.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <ul className="flex flex-col gap-2">
+                {filteredTask.map((task) => (
+                  <TaskList
+                    key={task.id}
+                    task={task}
+                    onDelete={deleteTask}
+                    onEdit={editTask}
+                    onToggle={toggleComplete}
+                    canReorder={canReorder}
+                  />
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
         </CardContent>
       </Card>
       <p className="watermark">Practicing React Project by Luqman Hayyan</p>
