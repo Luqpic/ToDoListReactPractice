@@ -1,10 +1,11 @@
 import TodoPage from "./pages/TodoPage";
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   return (
-    <div>
+    <AuthProvider>
       <TodoPage />
-    </div>
+    </AuthProvider>
   );
 }
 
