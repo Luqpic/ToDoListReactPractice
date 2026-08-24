@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +17,20 @@ interface props {
   onDelete: (id: number) => void;
   onEdit: (id: number, newTask: string) => void;
   onToggle: (id: number) => void;
+  canReorder: boolean;
 }
 
-function TaskList({ task, onDelete, onEdit, onToggle }: props) {
+function TaskList({ task, onDelete, onEdit, onToggle, canReorder }: props) {
   const [isEditing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.text);
+
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id: task.id, disabled: !canReorder });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   const handleSave = () => {
     onEdit(task.id, editValue);
@@ -26,8 +38,22 @@ function TaskList({ task, onDelete, onEdit, onToggle }: props) {
   };
 
   return (
-    <Card size="sm" className="bg-muted ring-0">
+    <Card ref={setNodeRef} style={style} size="sm" className="bg-muted ring-0">
       <CardContent className="flex items-center gap-3">
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          disabled={!canReorder}
+          className={
+            canReorder
+              ? "shrink-0 cursor-grab text-muted-foreground touch-none"
+              : "shrink-0 cursor-not-allowed text-muted-foreground/40 touch-none"
+          }
+          aria-label="Drag to reorder"
+        >
+          <GripVertical size={18} />
+        </button>
         <Checkbox
           checked={task.completed}
           onCheckedChange={() => onToggle(task.id)}
