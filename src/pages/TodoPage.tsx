@@ -1,5 +1,6 @@
 import "../App.css";
 import TaskList from "../components/task.tsx";
+import AnalyticsDashboard from "../components/AnalyticsDashboard";
 import { useState, useEffect } from "react";
 import {
   DndContext,
@@ -38,7 +39,7 @@ import {
 
 import { useAuth } from "@/context/AuthContext";
 
-interface Task {
+export interface Task {
   id: number;
   text: string;
   completed: boolean;
@@ -134,6 +135,7 @@ export default function TodoPage() {
         </CardHeader>
 
         <CardContent className="flex flex-col gap-5">
+          <AnalyticsDashboard tasks={task} />
           <div className="flex flex-col gap-2">
             <Input
               type="text"
