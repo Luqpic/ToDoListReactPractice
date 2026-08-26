@@ -38,8 +38,13 @@ function TaskList({ task, onDelete, onEdit, onToggle, canReorder }: props) {
   };
 
   return (
-    <Card ref={setNodeRef} style={style} size="sm" className="bg-muted ring-0">
-      <CardContent className="flex items-center gap-3">
+    <Card
+      ref={setNodeRef}
+      style={style}
+      size="sm"
+      className="bg-muted ring-0 h-10"
+    >
+      <CardContent className="flex items-center justify-between h-full px-4 py-0 gap-2">
         <button
           type="button"
           {...attributes}
@@ -60,7 +65,7 @@ function TaskList({ task, onDelete, onEdit, onToggle, canReorder }: props) {
         />
         {isEditing ? (
           <Input
-            className="flex-1 h-auto py-1 md:text-[1.1rem] text-[1.1rem] bg-background"
+            className="flex-1 h-6 py-1 md:text-[1.1rem] text-[1.1rem] bg-background"
             type="text"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
