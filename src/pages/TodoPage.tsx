@@ -46,6 +46,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Toaster, toast } from "@/components/ui/toast";
 
 import { useAuth } from "@/context/AuthContext";
 
@@ -105,6 +106,19 @@ export default function TodoPage() {
     const newTask = { id: Date.now(), text: input, completed: false };
     setTask([...task, newTask]);
     setInput("");
+
+    const toastId = toast.add({
+      title: "Task created",
+      description: `"${newTask.text}" was added.`,
+      type: "success",
+      actionProps: {
+        children: "Undo",
+        onClick: () => {
+          setTask((prev) => prev.filter((t) => t.id !== newTask.id));
+          toast.close(toastId);
+        },
+      },
+    });
   };
 
   const deleteTask = (taskId: number) => {
@@ -244,6 +258,7 @@ export default function TodoPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Toaster />
     </div>
   );
 }
