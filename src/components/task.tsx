@@ -8,6 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 
+import { MoreVertical } from "lucide-react"; // already a dependency here (see GripVertical import)
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { ButtonGroup } from "@/components/ui/button-group";
+
 export interface props {
   task: {
     id: number;
@@ -23,6 +31,8 @@ export interface props {
 function TaskList({ task, onDelete, onEdit, onToggle, canReorder }: props) {
   const [isEditing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.text);
+
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: task.id, disabled: !canReorder });
@@ -80,17 +90,44 @@ function TaskList({ task, onDelete, onEdit, onToggle, canReorder }: props) {
           </span>
         )}
         <div className="flex gap-2 shrink-0">
-          <Button variant="destructive" onClick={() => onDelete(task.id)}>
-            Delete
-          </Button>
           {isEditing ? (
             <Button variant="outline" onClick={handleSave}>
               Save
             </Button>
           ) : (
-            <Button variant="secondary" onClick={() => setEditing(true)}>
-              Edit
-            </Button>
+            <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+              <PopoverTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Task actions"
+                    className="text-muted-foreground hover:bg-muted-foreground/20 hover:text-foreground transition-colors"
+                  />
+                }
+              >
+                <MoreVertical />
+              </PopoverTrigger>
+              <PopoverContent side="left" align="center" className="w-auto p-1">
+                <ButtonGroup>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setEditing(true);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => onDelete(task.id)}
+                  >
+                    Delete
+                  </Button>
+                </ButtonGroup>
+              </PopoverContent>
+            </Popover>
           )}
         </div>
       </CardContent>
