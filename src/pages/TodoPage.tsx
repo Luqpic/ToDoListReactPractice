@@ -36,6 +36,16 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import { useAuth } from "@/context/AuthContext";
 
@@ -100,6 +110,15 @@ export default function TodoPage() {
   const deleteTask = (taskId: number) => {
     const updatedTasks = task.filter((task) => task.id !== taskId);
     setTask(updatedTasks);
+  };
+
+  const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
+
+  const confirmDelete = () => {
+    if (taskToDelete !== null) {
+      deleteTask(taskToDelete);
+      setTaskToDelete(null);
+    }
   };
 
   const editTask = (taskId: number, newText: string) => {
@@ -189,7 +208,7 @@ export default function TodoPage() {
                   <TaskList
                     key={task.id}
                     task={task}
-                    onDelete={deleteTask}
+                    onDelete={(id) => setTaskToDelete(id)}
                     onEdit={editTask}
                     onToggle={toggleComplete}
                     canReorder={canReorder}
@@ -201,6 +220,30 @@ export default function TodoPage() {
         </CardContent>
       </Card>
       <p className="watermark">Practicing React Project by Luqman Hayyan</p>
+      <AlertDialog
+        open={taskToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setTaskToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your
+              task.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setTaskToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
