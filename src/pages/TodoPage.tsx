@@ -49,6 +49,7 @@ import {
 import { Toaster, toast } from "@/components/ui/toast";
 import logo from "../assets/Chatgpt.svg";
 import { MoveUpRight } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
 
@@ -184,7 +185,7 @@ export default function TodoPage() {
               onKeyDown={(e) => e.key === "Enter" && addtask()}
             />
             <Button className="w-full h-10" onClick={addtask}>
-              ADD
+              <Plus />
             </Button>
           </div>
 
