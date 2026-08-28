@@ -2,21 +2,8 @@ import "../App.css";
 import TaskList from "../components/task.tsx";
 import AnalyticsDashboard from "../components/AnalyticsDashboard";
 import { useState, useEffect } from "react";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { AnimatePresence, Reorder } from "motion/react";
+import AnimatedHeight from "../components/AnimatedHeight";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,24 +68,6 @@ export default function TodoPage() {
       return true;
     })
     .filter((t) => t.text.toLowerCase().includes(search.toLowerCase()));
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    setTask((prev) => {
-      const oldIndex = prev.findIndex((t) => t.id === active.id);
-      const newIndex = prev.findIndex((t) => t.id === over.id);
-      return arrayMove(prev, oldIndex, newIndex);
-    });
-  };
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(task));
@@ -215,16 +184,13 @@ export default function TodoPage() {
             </Select>
           </div>
 
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={filteredTask.map((t) => t.id)}
-              strategy={verticalListSortingStrategy}
+          <AnimatedHeight>
+            <Reorder.Group
+              values={filteredTask}
+              onReorder={setTask}
+              className="flex flex-col gap-2"
             >
-              <ul className="flex flex-col gap-2">
+              <AnimatePresence mode="popLayout" initial={false}>
                 {filteredTask.map((task) => (
                   <TaskList
                     key={task.id}
@@ -235,9 +201,9 @@ export default function TodoPage() {
                     canReorder={canReorder}
                   />
                 ))}
-              </ul>
-            </SortableContext>
-          </DndContext>
+              </AnimatePresence>
+            </Reorder.Group>
+          </AnimatedHeight>
         </CardContent>
       </Card>
       <p className="watermark">Practicing React Project by Luqman Hayyan</p>

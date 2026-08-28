@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { motion, Reorder, useDragControls } from "motion/react";
 import { GripVertical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -38,104 +37,120 @@ function TaskList({ task, onDelete, onEdit, onToggle, canReorder }: props) {
 
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: task.id, disabled: !canReorder });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const dragControls = useDragControls();
 
   const handleSave = () => {
     onEdit(task.id, editValue);
     setEditing(false);
   };
 
+  const layoutTransition = { duration: 0.2, ease: "easeOut" } as const;
+
   return (
-    <Card
-      ref={setNodeRef}
-      style={style}
-      size="sm"
-      className="bg-muted ring-0 h-10"
+    <Reorder.Item
+      value={task}
+      dragListener={false}
+      dragControls={dragControls}
+      layout
+      // initial must stay `false` here, always — a real initial value (even one that
+      // starts real and later resolves to false) makes Reorder.Item replay it as a
+      // fade-out/in the moment this specific item is dragged and dropped.
+      initial={false}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={layoutTransition}
+      className="list-none"
     >
-      <CardContent className="flex items-center justify-between h-full px-4 py-0 gap-2">
-        <button
-          type="button"
-          {...attributes}
-          {...listeners}
-          disabled={!canReorder}
-          className={
-            canReorder
-              ? "shrink-0 cursor-grab text-muted-foreground touch-none"
-              : "shrink-0 cursor-not-allowed text-muted-foreground/40 touch-none"
-          }
-          aria-label="Drag to reorder"
-        >
-          <GripVertical size={18} />
-        </button>
-        <Checkbox
-          checked={task.completed}
-          onCheckedChange={() => onToggle(task.id)}
-        />
-        {isEditing ? (
-          <Input
-            className="flex-1 h-6 py-1 md:text-[1.1rem] text-[1.1rem] bg-background"
-            type="text"
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-          />
-        ) : (
-          <span
-            className={`flex-1 text-[1.1rem] ${
-              task.completed ? "line-through text-muted-foreground" : ""
-            }`}
+      <Card size="sm" className="bg-muted ring-0 min-h-10">
+        <CardContent className="flex items-center justify-between h-full px-4 py-2 gap-2">
+          <button
+            type="button"
+            onPointerDown={(e) => canReorder && dragControls.start(e)}
+            disabled={!canReorder}
+            className={
+              canReorder
+                ? "shrink-0 cursor-grab text-muted-foreground touch-none"
+                : "shrink-0 cursor-not-allowed text-muted-foreground/40 touch-none"
+            }
+            aria-label="Drag to reorder"
           >
-            {task.text}
-          </span>
-        )}
-        <div className="flex gap-2 shrink-0">
-          {isEditing ? (
-            <Button variant="outline" onClick={handleSave}>
-              <SavePen />
-            </Button>
-          ) : (
-            <Popover open={menuOpen} onOpenChange={setMenuOpen}>
-              <PopoverTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Task actions"
-                    className="text-muted-foreground hover:bg-muted-foreground/20 hover:text-foreground transition-colors"
-                  />
-                }
+            <GripVertical size={18} />
+          </button>
+          <Checkbox
+            checked={task.completed}
+            onCheckedChange={() => onToggle(task.id)}
+          />
+          <motion.div
+            layout
+            layoutDependency={isEditing}
+            transition={layoutTransition}
+            className="flex-1"
+          >
+            {isEditing ? (
+              <Input
+                className="h-6 py-1 md:text-[1.1rem] text-[1.1rem] bg-background"
+                type="text"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+              />
+            ) : (
+              <span
+                className={`text-[1.1rem] ${
+                  task.completed ? "line-through text-muted-foreground" : ""
+                }`}
               >
-                <MoreVertical />
-              </PopoverTrigger>
-              <PopoverContent side="left" align="center" className="w-auto p-1">
-                <ButtonGroup>
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      setEditing(true);
-                      setMenuOpen(false);
-                    }}
-                  >
-                    <Pencil />
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => onDelete(task.id)}
-                  >
-                    <Trash2 />
-                  </Button>
-                </ButtonGroup>
-              </PopoverContent>
-            </Popover>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+                {task.text}
+              </span>
+            )}
+          </motion.div>
+          <div className="flex gap-2 shrink-0">
+            {isEditing ? (
+              <Button variant="outline" onClick={handleSave}>
+                <SavePen />
+              </Button>
+            ) : (
+              <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Task actions"
+                      className="text-muted-foreground hover:bg-muted-foreground/20 hover:text-foreground transition-colors"
+                    />
+                  }
+                >
+                  <MoreVertical />
+                </PopoverTrigger>
+                <PopoverContent
+                  side="left"
+                  align="center"
+                  className="w-auto p-1"
+                >
+                  <ButtonGroup>
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setEditing(true);
+                        setMenuOpen(false);
+                      }}
+                    >
+                      <Pencil />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => onDelete(task.id)}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </ButtonGroup>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </Reorder.Item>
   );
 }
 
