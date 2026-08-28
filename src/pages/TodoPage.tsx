@@ -48,6 +48,7 @@ export interface Task {
 
 export default function TodoPage() {
   const { user, logout } = useAuth();
+  const [showLogoutAlert, setShowLogoutAlert] = useState(false);
   const storageKey = `todo-tasks-${user!.id}`;
 
   const [input, setInput] = useState("");
@@ -137,7 +138,10 @@ export default function TodoPage() {
             </div>
             <CardDescription>Keeping track of whachtu doing </CardDescription>
           </div>
-          <Button variant="destructive" onClick={logout}>
+          <Button
+            variant="destructive"
+            onClick={() => setShowLogoutAlert(true)}
+          >
             <MoveUpRight />
             Log out
           </Button>
@@ -207,6 +211,26 @@ export default function TodoPage() {
         </CardContent>
       </Card>
       <p className="watermark">Practicing React Project by Luqman Hayyan</p>
+      <AlertDialog open={showLogoutAlert} onOpenChange={setShowLogoutAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Log out of your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to log out? You will need to sign in again
+              to access your tasks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowLogoutAlert(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={logout}>
+              Log out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog
         open={taskToDelete !== null}
         onOpenChange={(open) => {
