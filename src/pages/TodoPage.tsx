@@ -47,6 +47,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Toaster, toast } from "@/components/ui/toast";
+import logo from "../assets/Chatgpt.svg";
+import { MoveUpRight } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
 
@@ -153,16 +155,20 @@ export default function TodoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex justify-center px-4 py-12">
+    <div className="min-h-screen  flex justify-center px-4 py-12">
       <Card className="w-full max-w-xl h-fit shadow-md">
         <CardHeader className="flex flex-row items-start justify-between">
           <div>
-            <CardTitle className="text-2xl font-semibold tracking-tight uppercase">
-              Todolist
-            </CardTitle>
+            <div className="flex flex-row items-center gap-1">
+              <img src={logo} className="w-12 h-12" />
+              <CardTitle className="text-2xl font-semibold tracking-tight uppercase">
+                TODOLIST
+              </CardTitle>
+            </div>
             <CardDescription>Keeping track of whachtu doing </CardDescription>
           </div>
-          <Button variant="outline" onClick={logout}>
+          <Button variant="destructive" onClick={logout}>
+            <MoveUpRight />
             Log out
           </Button>
         </CardHeader>

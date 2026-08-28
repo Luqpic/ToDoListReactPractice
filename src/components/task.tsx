@@ -9,6 +9,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 
 import { MoreVertical } from "lucide-react"; // already a dependency here (see GripVertical import)
+import { Trash2 } from "lucide-react";
+import { Pencil } from "lucide-react";
+import { SavePen } from "lucide-react";
+
 import {
   Popover,
   PopoverTrigger,
@@ -92,7 +96,7 @@ function TaskList({ task, onDelete, onEdit, onToggle, canReorder }: props) {
         <div className="flex gap-2 shrink-0">
           {isEditing ? (
             <Button variant="outline" onClick={handleSave}>
-              Save
+              <SavePen />
             </Button>
           ) : (
             <Popover open={menuOpen} onOpenChange={setMenuOpen}>
@@ -117,13 +121,13 @@ function TaskList({ task, onDelete, onEdit, onToggle, canReorder }: props) {
                       setMenuOpen(false);
                     }}
                   >
-                    Edit
+                    <Pencil />
                   </Button>
                   <Button
                     variant="destructive"
                     onClick={() => onDelete(task.id)}
                   >
-                    Delete
+                    <Trash2 />
                   </Button>
                 </ButtonGroup>
               </PopoverContent>

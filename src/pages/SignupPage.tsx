@@ -15,6 +15,7 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import logo from "../assets/Chatgpt.svg";
 
 function SignupPage() {
   const { signup } = useAuth();
@@ -59,12 +60,15 @@ function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex justify-center px-4 py-12">
+    <div className="min-h-screen flex justify-center px-4 py-12">
       <Card className="w-full max-w-sm h-fit shadow-md">
         <CardHeader>
-          <CardTitle className="text-2xl font-semibold tracking-tight">
-            Sign up
-          </CardTitle>
+          <div className="flex flex-row items-center gap-1">
+            <img src={logo} className="w-12 h-12" />
+            <CardTitle className="text-2xl font-semibold tracking-tight">
+              TODOLIST
+            </CardTitle>
+          </div>
           <CardDescription>Create an account</CardDescription>
         </CardHeader>
         <CardContent>
