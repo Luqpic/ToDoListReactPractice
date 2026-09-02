@@ -210,7 +210,7 @@ export default function TodoPage() {
           </AnimatedHeight>
         </CardContent>
       </Card>
-      <p className="watermark">Practicing React Project by Luqman Hayyan</p>
+
       <AlertDialog open={showLogoutAlert} onOpenChange={setShowLogoutAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -230,7 +230,6 @@ export default function TodoPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
       <AlertDialog
         open={taskToDelete !== null}
         onOpenChange={(open) => {

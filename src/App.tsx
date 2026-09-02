@@ -48,6 +48,7 @@ function App() {
             />
           </Routes>
         </AnimatePresence>
+        <p className="watermark">Practicing React Project by Luqman Hayyan</p>
       </div>
     </AuthProvider>
   );
