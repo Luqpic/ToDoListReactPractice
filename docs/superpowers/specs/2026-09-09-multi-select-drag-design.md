@@ -65,9 +65,11 @@ project has no automated test suite.
 - `selectAll()` — sets `selectedIds` to every task's id.
 - `clearSelection()` — clears `selectedIds`, sets `selectionMode = false`
   (re-enables search/filter).
-- `bulkDelete()` — removes all tasks whose id is in `selectedIds`,
-  reusing the existing `AlertDialog` confirmation pattern used for
-  single-task delete.
+- `bulkDelete()` — removes all tasks whose id is in `selectedIds`. A
+  new `AlertDialog` instance (separate from the existing single-task
+  delete confirmation) follows the same confirm/cancel pattern already
+  used in `TodoPage.tsx`, worded for a bulk action (e.g. "Delete N
+  tasks?").
 
 While `selectionMode` is true, the search `Input` and filter `Select`
 are disabled (locked to `search = ""`, `filter = "All"`) so
@@ -99,8 +101,8 @@ Rendered whenever `selectionMode` is true (e.g. pinned below
 `CardContent`, above the card's bottom edge):
 - "N selected" label
 - **Select All** button → `selectAll()`
-- **Delete** button (destructive) → opens the existing `AlertDialog`
-  confirmation pattern, confirming calls `bulkDelete()`
+- **Delete** button (destructive) → opens the new bulk-delete
+  `AlertDialog`; confirming calls `bulkDelete()`
 - **Done** button → `clearSelection()`
 
 ## Group-drag mechanics & visuals
