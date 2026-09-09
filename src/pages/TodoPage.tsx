@@ -8,12 +8,17 @@ import {
   DragOverlay,
   closestCenter,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
 import AnimatedHeight from "../components/AnimatedHeight";
 
 import { Button } from "@/components/ui/button";
@@ -108,9 +113,14 @@ export default function TodoPage() {
     clearSelection();
   };
 
+  const selectedCount = task.filter((t) => selectedIds.has(t.id)).length;
+
   const canReorder = filter === "All" && search.trim() === "";
 
-  const sensors = useSensors(useSensor(PointerSensor));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const [activeId, setActiveId] = useState<number | null>(null);
 
@@ -335,30 +345,30 @@ export default function TodoPage() {
                 </div>
               </SortableContext>
               <DragOverlay>
-                {activeId !== null
-                  ? (() => {
-                      const activeTask = task.find((t) => t.id === activeId);
-                      if (!activeTask) return null;
-                      const isGroupDrag =
-                        selectionMode && selectedIds.has(activeId);
-                      return (
-                        <div className="relative">
-                          <Card size="sm" className="bg-muted ring-2 ring-primary min-h-10">
-                            <CardContent className="flex items-center px-4 py-2">
-                              <span className="text-[1.1rem]">
-                                {activeTask.text}
-                              </span>
-                            </CardContent>
-                          </Card>
-                          {isGroupDrag && selectedIds.size > 1 && (
-                            <span className="absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                              {selectedIds.size}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()
-                  : null}
+                {(() => {
+                  if (activeId === null) return null;
+                  const isGroupDrag =
+                    selectionMode && selectedIds.has(activeId);
+                  if (!isGroupDrag) return null;
+                  const activeTask = task.find((t) => t.id === activeId);
+                  if (!activeTask) return null;
+                  return (
+                    <div className="relative">
+                      <Card size="sm" className="bg-muted ring-2 ring-primary min-h-10">
+                        <CardContent className="flex items-center px-4 py-2">
+                          <span className="text-[1.1rem]">
+                            {activeTask.text}
+                          </span>
+                        </CardContent>
+                      </Card>
+                      {selectedIds.size > 1 && (
+                        <span className="absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                          {selectedIds.size}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
               </DragOverlay>
             </DndContext>
           </AnimatedHeight>
@@ -366,16 +376,21 @@ export default function TodoPage() {
           {selectionMode && (
             <div className="flex items-center justify-between rounded-lg border bg-muted px-3 py-2">
               <span className="text-sm font-medium">
-                {selectedIds.size} selected
+                {selectedCount} selected
               </span>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={selectAll}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={selectAll}
+                  disabled={selectedCount === task.length || task.length === 0}
+                >
                   Select All
                 </Button>
                 <Button
                   variant="destructive"
                   size="sm"
-                  disabled={selectedIds.size === 0}
+                  disabled={selectedCount === 0}
                   onClick={() => setShowBulkDeleteAlert(true)}
                 >
                   Delete
@@ -417,7 +432,7 @@ export default function TodoPage() {
       <AlertDialog open={showBulkDeleteAlert} onOpenChange={setShowBulkDeleteAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selectedIds.size} tasks?</AlertDialogTitle>
+            <AlertDialogTitle>Delete {selectedCount} tasks?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
               selected tasks.

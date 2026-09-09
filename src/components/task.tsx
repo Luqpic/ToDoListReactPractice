@@ -64,8 +64,15 @@ function TaskList({
 
   const dragEnabled = selectionMode ? isSelected : canReorder;
 
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: task.id, disabled: !dragEnabled });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id, disabled: !dragEnabled });
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -100,95 +107,99 @@ function TaskList({
               )}
             >
               <CardContent className="flex items-center justify-between h-full px-4 py-2 gap-2">
-          <button
-            type="button"
-            {...attributes}
-            {...listeners}
-            disabled={!dragEnabled}
-            className={
-              dragEnabled
-                ? "shrink-0 cursor-grab text-muted-foreground touch-none"
-                : "shrink-0 cursor-not-allowed text-muted-foreground/40 touch-none"
-            }
-            aria-label="Drag to reorder"
-          >
-            <GripVertical size={18} />
-          </button>
-          <Checkbox
-            checked={selectionMode ? isSelected : task.completed}
-            onCheckedChange={() =>
-              selectionMode ? onSelect() : onToggle(task.id)
-            }
-          />
-          <motion.div
-            layout
-            layoutDependency={isEditing}
-            transition={layoutTransition}
-            className="flex-1"
-          >
-            {isEditing ? (
-              <Input
-                className="h-6 py-1 md:text-[1.1rem] text-[1.1rem] bg-background"
-                type="text"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-              />
-            ) : (
-              <span
-                className={`text-[1.1rem] ${
-                  task.completed ? "line-through text-muted-foreground" : ""
-                }`}
-              >
-                {task.text}
-              </span>
-            )}
-          </motion.div>
-          <div className="flex gap-2 shrink-0">
-            {isEditing ? (
-              <Button variant="outline" onClick={handleSave}>
-                <SavePen />
-              </Button>
-            ) : (
-              <Popover open={menuOpen} onOpenChange={setMenuOpen}>
-                <PopoverTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Task actions"
-                      className="text-muted-foreground hover:bg-muted-foreground/20 hover:text-foreground transition-colors"
-                    />
+                <button
+                  type="button"
+                  ref={setActivatorNodeRef}
+                  {...attributes}
+                  {...listeners}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  disabled={!dragEnabled}
+                  className={
+                    dragEnabled
+                      ? "shrink-0 cursor-grab text-muted-foreground touch-none"
+                      : "shrink-0 cursor-not-allowed text-muted-foreground/40 touch-none"
                   }
+                  aria-label="Drag to reorder"
                 >
-                  <MoreVertical />
-                </PopoverTrigger>
-                <PopoverContent
-                  side="left"
-                  align="center"
-                  className="w-auto p-1"
+                  <GripVertical size={18} />
+                </button>
+                <Checkbox
+                  checked={selectionMode ? isSelected : task.completed}
+                  onCheckedChange={() =>
+                    selectionMode ? onSelect() : onToggle(task.id)
+                  }
+                />
+                <motion.div
+                  layout
+                  layoutDependency={isEditing}
+                  transition={layoutTransition}
+                  className="flex-1"
                 >
-                  <ButtonGroup>
-                    <Button
-                      variant="secondary"
-                      onClick={() => {
-                        setEditing(true);
-                        setMenuOpen(false);
-                      }}
+                  {isEditing ? (
+                    <Input
+                      className="h-6 py-1 md:text-[1.1rem] text-[1.1rem] bg-background"
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                    />
+                  ) : (
+                    <span
+                      className={`text-[1.1rem] ${
+                        task.completed
+                          ? "line-through text-muted-foreground"
+                          : ""
+                      }`}
                     >
-                      <Pencil />
+                      {task.text}
+                    </span>
+                  )}
+                </motion.div>
+                <div className="flex gap-2 shrink-0">
+                  {isEditing ? (
+                    <Button variant="outline" onClick={handleSave}>
+                      <SavePen />
                     </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => onDelete(task.id)}
-                    >
-                      <Trash2 />
-                    </Button>
-                  </ButtonGroup>
-                </PopoverContent>
-              </Popover>
-            )}
-          </div>
-            </CardContent>
+                  ) : (
+                    <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+                      <PopoverTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Task actions"
+                            className="text-muted-foreground hover:bg-muted-foreground/20 hover:text-foreground transition-colors"
+                          />
+                        }
+                      >
+                        <MoreVertical />
+                      </PopoverTrigger>
+                      <PopoverContent
+                        side="left"
+                        align="center"
+                        className="w-auto p-1"
+                      >
+                        <ButtonGroup>
+                          <Button
+                            variant="secondary"
+                            onClick={() => {
+                              setEditing(true);
+                              setMenuOpen(false);
+                            }}
+                          >
+                            <Pencil />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={() => onDelete(task.id)}
+                          >
+                            <Trash2 />
+                          </Button>
+                        </ButtonGroup>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
+              </CardContent>
             </Card>
           </ContextMenuTrigger>
           <ContextMenuContent>
