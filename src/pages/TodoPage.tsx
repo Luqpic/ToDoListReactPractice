@@ -67,6 +67,16 @@ export default function TodoPage() {
 
   const [filter, setFilter] = useState("All");
 
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  const enterSelectionMode = (taskId: number) => {
+    setSelectionMode(true);
+    setSelectedIds(new Set([taskId]));
+    setSearch("");
+    setFilter("All");
+  };
+
   const canReorder = filter === "All" && search.trim() === "";
 
   const sensors = useSensors(useSensor(PointerSensor));
@@ -180,10 +190,12 @@ export default function TodoPage() {
               placeholder="search item . . ."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              disabled={selectionMode}
             />
             <Select
               value={filter}
               onValueChange={(v) => setFilter(v as string)}
+              disabled={selectionMode}
             >
               <SelectTrigger className="w-32 shrink-0">
                 <SelectValue placeholder="Filter" />
@@ -219,6 +231,9 @@ export default function TodoPage() {
                         onEdit={editTask}
                         onToggle={toggleComplete}
                         canReorder={canReorder}
+                        selectionMode={selectionMode}
+                        isSelected={selectedIds.has(task.id)}
+                        onEnterSelection={() => enterSelectionMode(task.id)}
                       />
                     ))}
                   </AnimatePresence>

@@ -8,6 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+} from "@/components/ui/context-menu";
+import { cn } from "@/lib/utils";
 
 import { MoreVertical } from "lucide-react"; // already a dependency here (see GripVertical import)
 import { Trash2 } from "lucide-react";
@@ -31,9 +38,21 @@ export interface props {
   onEdit: (id: number, newTask: string) => void;
   onToggle: (id: number) => void;
   canReorder: boolean;
+  selectionMode: boolean;
+  isSelected: boolean;
+  onEnterSelection: () => void;
 }
 
-function TaskList({ task, onDelete, onEdit, onToggle, canReorder }: props) {
+function TaskList({
+  task,
+  onDelete,
+  onEdit,
+  onToggle,
+  canReorder,
+  selectionMode,
+  isSelected,
+  onEnterSelection,
+}: props) {
   const [isEditing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.text);
 
@@ -62,8 +81,16 @@ function TaskList({ task, onDelete, onEdit, onToggle, canReorder }: props) {
         exit={{ opacity: 0, scale: 0.95 }}
         transition={layoutTransition}
       >
-        <Card size="sm" className="bg-muted ring-0 min-h-10">
-        <CardContent className="flex items-center justify-between h-full px-4 py-2 gap-2">
+        <ContextMenu>
+          <ContextMenuTrigger>
+            <Card
+              size="sm"
+              className={cn(
+                "bg-muted ring-0 min-h-10",
+                selectionMode && isSelected && "ring-2 ring-primary",
+              )}
+            >
+              <CardContent className="flex items-center justify-between h-full px-4 py-2 gap-2">
           <button
             type="button"
             {...attributes}
@@ -150,8 +177,13 @@ function TaskList({ task, onDelete, onEdit, onToggle, canReorder }: props) {
               </Popover>
             )}
           </div>
-        </CardContent>
-        </Card>
+            </CardContent>
+            </Card>
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem onClick={onEnterSelection}>Select</ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
       </motion.div>
     </div>
   );
