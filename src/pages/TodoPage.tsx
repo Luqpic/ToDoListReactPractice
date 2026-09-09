@@ -5,13 +5,15 @@ import { useState, useEffect } from "react";
 import { AnimatePresence } from "motion/react";
 import {
   DndContext,
+  DragOverlay,
   closestCenter,
   PointerSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
 } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import AnimatedHeight from "../components/AnimatedHeight";
 
 import { Button } from "@/components/ui/button";
@@ -110,14 +112,44 @@ export default function TodoPage() {
 
   const sensors = useSensors(useSensor(PointerSensor));
 
+  const [activeId, setActiveId] = useState<number | null>(null);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as number);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null);
     if (!over || active.id === over.id) return;
+
+    const activeIdNum = active.id as number;
+    const overIdNum = over.id as number;
+    const isGroupDrag = selectionMode && selectedIds.has(activeIdNum);
+
     setTask((prev) => {
-      const oldIndex = prev.findIndex((t) => t.id === active.id);
-      const newIndex = prev.findIndex((t) => t.id === over.id);
-      if (oldIndex === -1 || newIndex === -1) return prev;
-      return arrayMove(prev, oldIndex, newIndex);
+      const movingIds = isGroupDrag
+        ? prev.filter((t) => selectedIds.has(t.id)).map((t) => t.id)
+        : [activeIdNum];
+
+      const remaining = prev.filter((t) => !movingIds.includes(t.id));
+      const moving = prev.filter((t) => movingIds.includes(t.id));
+
+      const overIndexInRemaining = remaining.findIndex(
+        (t) => t.id === overIdNum,
+      );
+      // Dropping onto another already-selected task (which was just
+      // filtered out of `remaining`) falls back to appending at the end.
+      // Known first-pass limitation — flagged in the spec for follow-up
+      // once this is tried out.
+      const insertAt =
+        overIndexInRemaining === -1 ? remaining.length : overIndexInRemaining;
+
+      return [
+        ...remaining.slice(0, insertAt),
+        ...moving,
+        ...remaining.slice(insertAt),
+      ];
     });
   };
 
@@ -244,6 +276,7 @@ export default function TodoPage() {
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
             >
               <SortableContext
@@ -264,11 +297,44 @@ export default function TodoPage() {
                         isSelected={selectedIds.has(task.id)}
                         onEnterSelection={() => enterSelectionMode(task.id)}
                         onSelect={() => toggleSelected(task.id)}
+                        isHiddenDuringDrag={
+                          activeId !== null &&
+                          selectionMode &&
+                          selectedIds.has(activeId) &&
+                          selectedIds.has(task.id) &&
+                          task.id !== activeId
+                        }
                       />
                     ))}
                   </AnimatePresence>
                 </div>
               </SortableContext>
+              <DragOverlay>
+                {activeId !== null
+                  ? (() => {
+                      const activeTask = task.find((t) => t.id === activeId);
+                      if (!activeTask) return null;
+                      const isGroupDrag =
+                        selectionMode && selectedIds.has(activeId);
+                      return (
+                        <div className="relative">
+                          <Card size="sm" className="bg-muted ring-2 ring-primary min-h-10">
+                            <CardContent className="flex items-center px-4 py-2">
+                              <span className="text-[1.1rem]">
+                                {activeTask.text}
+                              </span>
+                            </CardContent>
+                          </Card>
+                          {isGroupDrag && selectedIds.size > 1 && (
+                            <span className="absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                              {selectedIds.size}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()
+                  : null}
+              </DragOverlay>
             </DndContext>
           </AnimatedHeight>
 

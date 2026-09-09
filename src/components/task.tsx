@@ -42,6 +42,7 @@ export interface props {
   isSelected: boolean;
   onEnterSelection: () => void;
   onSelect: () => void;
+  isHiddenDuringDrag: boolean;
 }
 
 function TaskList({
@@ -54,14 +55,17 @@ function TaskList({
   isSelected,
   onEnterSelection,
   onSelect,
+  isHiddenDuringDrag,
 }: props) {
   const [isEditing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.text);
 
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const dragEnabled = selectionMode ? isSelected : canReorder;
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: task.id, disabled: !canReorder });
+    useSortable({ id: task.id, disabled: !dragEnabled });
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -79,7 +83,10 @@ function TaskList({
     <div ref={setNodeRef} style={style}>
       <motion.div
         initial={false}
-        animate={{ opacity: isDragging ? 0.4 : 1, scale: 1 }}
+        animate={{
+          opacity: isHiddenDuringDrag ? 0 : isDragging ? 0.4 : 1,
+          scale: 1,
+        }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={layoutTransition}
       >
@@ -97,9 +104,9 @@ function TaskList({
             type="button"
             {...attributes}
             {...listeners}
-            disabled={!canReorder}
+            disabled={!dragEnabled}
             className={
-              canReorder
+              dragEnabled
                 ? "shrink-0 cursor-grab text-muted-foreground touch-none"
                 : "shrink-0 cursor-not-allowed text-muted-foreground/40 touch-none"
             }
