@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { motion, Reorder, useDragControls } from "motion/react";
+import { motion } from "motion/react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -37,7 +39,13 @@ function TaskList({ task, onDelete, onEdit, onToggle, canReorder }: props) {
 
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const dragControls = useDragControls();
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: task.id, disabled: !canReorder });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   const handleSave = () => {
     onEdit(task.id, editValue);
@@ -47,25 +55,19 @@ function TaskList({ task, onDelete, onEdit, onToggle, canReorder }: props) {
   const layoutTransition = { duration: 0.2, ease: "easeOut" } as const;
 
   return (
-    <Reorder.Item
-      value={task}
-      dragListener={false}
-      dragControls={dragControls}
-      layout
-      // initial must stay `false` here, always — a real initial value (even one that
-      // starts real and later resolves to false) makes Reorder.Item replay it as a
-      // fade-out/in the moment this specific item is dragged and dropped.
-      initial={false}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={layoutTransition}
-      className="list-none"
-    >
-      <Card size="sm" className="bg-muted ring-0 min-h-10">
+    <div ref={setNodeRef} style={style}>
+      <motion.div
+        initial={false}
+        animate={{ opacity: isDragging ? 0.4 : 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={layoutTransition}
+      >
+        <Card size="sm" className="bg-muted ring-0 min-h-10">
         <CardContent className="flex items-center justify-between h-full px-4 py-2 gap-2">
           <button
             type="button"
-            onPointerDown={(e) => canReorder && dragControls.start(e)}
+            {...attributes}
+            {...listeners}
             disabled={!canReorder}
             className={
               canReorder
@@ -149,8 +151,9 @@ function TaskList({ task, onDelete, onEdit, onToggle, canReorder }: props) {
             )}
           </div>
         </CardContent>
-      </Card>
-    </Reorder.Item>
+        </Card>
+      </motion.div>
+    </div>
   );
 }
 

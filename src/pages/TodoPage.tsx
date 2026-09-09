@@ -2,7 +2,16 @@ import "../App.css";
 import TaskList from "../components/task.tsx";
 import AnalyticsDashboard from "../components/AnalyticsDashboard";
 import { useState, useEffect } from "react";
-import { AnimatePresence, Reorder } from "motion/react";
+import { AnimatePresence } from "motion/react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import AnimatedHeight from "../components/AnimatedHeight";
 
 import { Button } from "@/components/ui/button";
@@ -59,6 +68,19 @@ export default function TodoPage() {
   const [filter, setFilter] = useState("All");
 
   const canReorder = filter === "All" && search.trim() === "";
+
+  const sensors = useSensors(useSensor(PointerSensor));
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setTask((prev) => {
+      const oldIndex = prev.findIndex((t) => t.id === active.id);
+      const newIndex = prev.findIndex((t) => t.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  };
 
   const filteredTask = task
     .filter((t) => {
@@ -178,24 +200,31 @@ export default function TodoPage() {
           </div>
 
           <AnimatedHeight>
-            <Reorder.Group
-              values={filteredTask}
-              onReorder={setTask}
-              className="flex flex-col gap-2"
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
             >
-              <AnimatePresence mode="popLayout" initial={false}>
-                {filteredTask.map((task) => (
-                  <TaskList
-                    key={task.id}
-                    task={task}
-                    onDelete={(id) => setTaskToDelete(id)}
-                    onEdit={editTask}
-                    onToggle={toggleComplete}
-                    canReorder={canReorder}
-                  />
-                ))}
-              </AnimatePresence>
-            </Reorder.Group>
+              <SortableContext
+                items={filteredTask.map((t) => t.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="flex flex-col gap-2">
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {filteredTask.map((task) => (
+                      <TaskList
+                        key={task.id}
+                        task={task}
+                        onDelete={(id) => setTaskToDelete(id)}
+                        onEdit={editTask}
+                        onToggle={toggleComplete}
+                        canReorder={canReorder}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </SortableContext>
+            </DndContext>
           </AnimatedHeight>
         </CardContent>
       </Card>
