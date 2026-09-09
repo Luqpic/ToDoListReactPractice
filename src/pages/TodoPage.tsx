@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Toaster, toast } from "@/components/ui/toast";
 import logo from "../assets/Chatgpt.svg";
-import { MoveUpRight } from "lucide-react";
 import { Plus } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -47,8 +46,7 @@ export interface Task {
 }
 
 export default function TodoPage() {
-  const { user, logout } = useAuth();
-  const [showLogoutAlert, setShowLogoutAlert] = useState(false);
+  const { user } = useAuth();
   const storageKey = `todo-tasks-${user!.id}`;
 
   const [input, setInput] = useState("");
@@ -128,23 +126,14 @@ export default function TodoPage() {
   return (
     <div className="min-h-screen  flex justify-center px-4 py-12">
       <Card className="w-full max-w-xl h-fit shadow-md">
-        <CardHeader className="flex flex-row items-start justify-between">
-          <div>
-            <div className="flex flex-row items-center gap-1">
-              <img src={logo} className="w-12 h-12" />
-              <CardTitle className="text-2xl font-semibold tracking-tight uppercase">
-                TODOLIST
-              </CardTitle>
-            </div>
-            <CardDescription>Keeping track of whachtu doing </CardDescription>
+        <CardHeader>
+          <div className="flex flex-row items-center gap-1">
+            <img src={logo} className="w-12 h-12" />
+            <CardTitle className="text-2xl font-semibold tracking-tight uppercase">
+              TODOLIST
+            </CardTitle>
           </div>
-          <Button
-            variant="destructive"
-            onClick={() => setShowLogoutAlert(true)}
-          >
-            <MoveUpRight />
-            Log out
-          </Button>
+          <CardDescription>Keeping track of whachtu doing </CardDescription>
         </CardHeader>
 
         <CardContent className="flex flex-col gap-5">
@@ -211,25 +200,6 @@ export default function TodoPage() {
         </CardContent>
       </Card>
 
-      <AlertDialog open={showLogoutAlert} onOpenChange={setShowLogoutAlert}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Log out of your account?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to log out? You will need to sign in again
-              to access your tasks.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowLogoutAlert(false)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={logout}>
-              Log out
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
       <AlertDialog
         open={taskToDelete !== null}
         onOpenChange={(open) => {

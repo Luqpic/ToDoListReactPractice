@@ -3,7 +3,9 @@ import { AnimatePresence } from "motion/react";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/routes/ProtectedRoute";
 import PageTransition from "@/components/PageTransition";
+import AppShell from "@/components/AppShell";
 import TodoPage from "./pages/TodoPage";
+import ProfilePage from "./pages/ProfilePage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import Background from "./assets/Background.svg";
@@ -40,9 +42,23 @@ function App() {
               path="/"
               element={
                 <ProtectedRoute>
-                  <PageTransition>
-                    <TodoPage />
-                  </PageTransition>
+                  <AppShell>
+                    <PageTransition>
+                      <TodoPage />
+                    </PageTransition>
+                  </AppShell>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <AppShell>
+                    <PageTransition>
+                      <ProfilePage />
+                    </PageTransition>
+                  </AppShell>
                 </ProtectedRoute>
               }
             />
