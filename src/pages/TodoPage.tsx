@@ -77,6 +77,35 @@ export default function TodoPage() {
     setFilter("All");
   };
 
+  const toggleSelected = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedIds(new Set(task.map((t) => t.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+    setSelectionMode(false);
+  };
+
+  const [showBulkDeleteAlert, setShowBulkDeleteAlert] = useState(false);
+
+  const bulkDelete = () => {
+    setTask((prev) => prev.filter((t) => !selectedIds.has(t.id)));
+    setShowBulkDeleteAlert(false);
+    clearSelection();
+  };
+
   const canReorder = filter === "All" && search.trim() === "";
 
   const sensors = useSensors(useSensor(PointerSensor));
@@ -234,6 +263,7 @@ export default function TodoPage() {
                         selectionMode={selectionMode}
                         isSelected={selectedIds.has(task.id)}
                         onEnterSelection={() => enterSelectionMode(task.id)}
+                        onSelect={() => toggleSelected(task.id)}
                       />
                     ))}
                   </AnimatePresence>
@@ -241,6 +271,30 @@ export default function TodoPage() {
               </SortableContext>
             </DndContext>
           </AnimatedHeight>
+
+          {selectionMode && (
+            <div className="flex items-center justify-between rounded-lg border bg-muted px-3 py-2">
+              <span className="text-sm font-medium">
+                {selectedIds.size} selected
+              </span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={selectAll}>
+                  Select All
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={selectedIds.size === 0}
+                  onClick={() => setShowBulkDeleteAlert(true)}
+                >
+                  Delete
+                </Button>
+                <Button variant="secondary" size="sm" onClick={clearSelection}>
+                  Done
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -263,6 +317,26 @@ export default function TodoPage() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction variant="destructive" onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showBulkDeleteAlert} onOpenChange={setShowBulkDeleteAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} tasks?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              selected tasks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowBulkDeleteAlert(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={bulkDelete}>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

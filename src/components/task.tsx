@@ -41,6 +41,7 @@ export interface props {
   selectionMode: boolean;
   isSelected: boolean;
   onEnterSelection: () => void;
+  onSelect: () => void;
 }
 
 function TaskList({
@@ -52,6 +53,7 @@ function TaskList({
   selectionMode,
   isSelected,
   onEnterSelection,
+  onSelect,
 }: props) {
   const [isEditing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.text);
@@ -106,8 +108,10 @@ function TaskList({
             <GripVertical size={18} />
           </button>
           <Checkbox
-            checked={task.completed}
-            onCheckedChange={() => onToggle(task.id)}
+            checked={selectionMode ? isSelected : task.completed}
+            onCheckedChange={() =>
+              selectionMode ? onSelect() : onToggle(task.id)
+            }
           />
           <motion.div
             layout
