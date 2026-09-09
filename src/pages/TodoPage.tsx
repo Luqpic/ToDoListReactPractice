@@ -2,7 +2,23 @@ import "../App.css";
 import TaskList from "../components/task.tsx";
 import AnalyticsDashboard from "../components/AnalyticsDashboard";
 import { useState, useEffect } from "react";
-import { AnimatePresence, Reorder } from "motion/react";
+import { AnimatePresence } from "motion/react";
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
 import AnimatedHeight from "../components/AnimatedHeight";
 
 import { Button } from "@/components/ui/button";
@@ -58,7 +74,118 @@ export default function TodoPage() {
 
   const [filter, setFilter] = useState("All");
 
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  const enterSelectionMode = (taskId: number) => {
+    setSelectionMode(true);
+    setSelectedIds(new Set([taskId]));
+    setSearch("");
+    setFilter("All");
+  };
+
+  const toggleSelected = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedIds(new Set(task.map((t) => t.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+    setSelectionMode(false);
+  };
+
+  const [showBulkDeleteAlert, setShowBulkDeleteAlert] = useState(false);
+
+  const bulkDelete = () => {
+    setTask((prev) => prev.filter((t) => !selectedIds.has(t.id)));
+    setShowBulkDeleteAlert(false);
+    clearSelection();
+  };
+
+  const selectedCount = task.filter((t) => selectedIds.has(t.id)).length;
+
   const canReorder = filter === "All" && search.trim() === "";
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const [activeId, setActiveId] = useState<number | null>(null);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as number);
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+    if (!over || active.id === over.id) return;
+
+    const activeIdNum = active.id as number;
+    const overIdNum = over.id as number;
+    const isGroupDrag = selectionMode && selectedIds.has(activeIdNum);
+
+    setTask((prev) => {
+      const movingIds = isGroupDrag
+        ? prev.filter((t) => selectedIds.has(t.id)).map((t) => t.id)
+        : [activeIdNum];
+
+      const remaining = prev.filter((t) => !movingIds.includes(t.id));
+      const moving = prev.filter((t) => movingIds.includes(t.id));
+
+      const overIndexInRemaining = remaining.findIndex(
+        (t) => t.id === overIdNum,
+      );
+
+      let insertAt: number;
+      if (overIndexInRemaining === -1) {
+        // Dropping onto another already-selected task (which was just
+        // filtered out of `remaining`) falls back to appending at the end.
+        // Known first-pass limitation — flagged in the spec for follow-up
+        // once this is tried out.
+        insertAt = remaining.length;
+      } else {
+        const overOriginalIndex = prev.findIndex((t) => t.id === overIdNum);
+        const movingOriginalIndices = movingIds.map((id) =>
+          prev.findIndex((t) => t.id === id),
+        );
+        const maxMovingOriginalIndex = Math.max(...movingOriginalIndices);
+        // Dragging strictly past every moving item (the drop target's
+        // original index is after all of them) lands the moved block
+        // immediately AFTER the target — this matches dnd-kit's
+        // arrayMove semantics for a plain forward single-item drag.
+        // Otherwise (a backward drag, or the target originally sitting
+        // between two moving items) the block lands immediately BEFORE
+        // the target.
+        insertAt =
+          overOriginalIndex > maxMovingOriginalIndex
+            ? overIndexInRemaining + 1
+            : overIndexInRemaining;
+      }
+
+      return [
+        ...remaining.slice(0, insertAt),
+        ...moving,
+        ...remaining.slice(insertAt),
+      ];
+    });
+  };
 
   const filteredTask = task
     .filter((t) => {
@@ -158,10 +285,12 @@ export default function TodoPage() {
               placeholder="search item . . ."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              disabled={selectionMode}
             />
             <Select
               value={filter}
               onValueChange={(v) => setFilter(v as string)}
+              disabled={selectionMode}
             >
               <SelectTrigger className="w-32 shrink-0">
                 <SelectValue placeholder="Filter" />
@@ -178,25 +307,100 @@ export default function TodoPage() {
           </div>
 
           <AnimatedHeight>
-            <Reorder.Group
-              values={filteredTask}
-              onReorder={setTask}
-              className="flex flex-col gap-2"
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel}
             >
-              <AnimatePresence mode="popLayout" initial={false}>
-                {filteredTask.map((task) => (
-                  <TaskList
-                    key={task.id}
-                    task={task}
-                    onDelete={(id) => setTaskToDelete(id)}
-                    onEdit={editTask}
-                    onToggle={toggleComplete}
-                    canReorder={canReorder}
-                  />
-                ))}
-              </AnimatePresence>
-            </Reorder.Group>
+              <SortableContext
+                items={filteredTask.map((t) => t.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="flex flex-col gap-2">
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {filteredTask.map((task) => (
+                      <TaskList
+                        key={task.id}
+                        task={task}
+                        onDelete={(id) => setTaskToDelete(id)}
+                        onEdit={editTask}
+                        onToggle={toggleComplete}
+                        canReorder={canReorder}
+                        selectionMode={selectionMode}
+                        isSelected={selectedIds.has(task.id)}
+                        onEnterSelection={() => enterSelectionMode(task.id)}
+                        onSelect={() => toggleSelected(task.id)}
+                        isHiddenDuringDrag={
+                          activeId !== null &&
+                          selectionMode &&
+                          selectedIds.has(activeId) &&
+                          selectedIds.has(task.id) &&
+                          task.id !== activeId
+                        }
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </SortableContext>
+              <DragOverlay>
+                {(() => {
+                  if (activeId === null) return null;
+                  const isGroupDrag =
+                    selectionMode && selectedIds.has(activeId);
+                  if (!isGroupDrag) return null;
+                  const activeTask = task.find((t) => t.id === activeId);
+                  if (!activeTask) return null;
+                  return (
+                    <div className="relative">
+                      <Card size="sm" className="bg-muted ring-2 ring-primary min-h-10">
+                        <CardContent className="flex items-center px-4 py-2">
+                          <span className="text-[1.1rem]">
+                            {activeTask.text}
+                          </span>
+                        </CardContent>
+                      </Card>
+                      {selectedIds.size > 1 && (
+                        <span className="absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                          {selectedIds.size}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
+              </DragOverlay>
+            </DndContext>
           </AnimatedHeight>
+
+          {selectionMode && (
+            <div className="flex items-center justify-between rounded-lg border bg-muted px-3 py-2">
+              <span className="text-sm font-medium">
+                {selectedCount} selected
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={selectAll}
+                  disabled={selectedCount === task.length || task.length === 0}
+                >
+                  Select All
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={selectedCount === 0}
+                  onClick={() => setShowBulkDeleteAlert(true)}
+                >
+                  Delete
+                </Button>
+                <Button variant="secondary" size="sm" onClick={clearSelection}>
+                  Done
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -219,6 +423,26 @@ export default function TodoPage() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction variant="destructive" onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showBulkDeleteAlert} onOpenChange={setShowBulkDeleteAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedCount} tasks?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              selected tasks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowBulkDeleteAlert(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={bulkDelete}>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
