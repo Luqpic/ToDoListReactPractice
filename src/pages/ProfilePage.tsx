@@ -32,10 +32,12 @@ import {
   LogOut,
   Mail,
   Calendar,
+  KeyRound,
   Download,
   Upload,
   Copy,
   Check,
+  ShieldAlert,
   Database,
   CheckCheck,
 } from "lucide-react";
@@ -53,14 +55,19 @@ const AVATAR_PRESETS = [
   "🐱",
 ];
 
-export default function ProfilePage() {
-  const { user, logout, updateProfile } = useAuth();
+type TabType = "profile" | "data" | "security";
 
-  const [activeTab, setActiveTab] = useState("profile");
+export default function ProfilePage() {
+  const { user, logout, updateProfile, changePassword, deleteAccount } =
+    useAuth();
+
+  const [activeTab, setActiveTab] = useState<TabType>("profile");
   const [copiedId, setCopiedId] = useState(false);
 
   // Dialog states
   const [showLogoutAlert, setShowLogoutAlert] = useState(false);
+  const [showResetTasksAlert, setShowResetTasksAlert] = useState(false);
+  const [showDeleteAccountAlert, setShowDeleteAccountAlert] = useState(false);
   const [showClearCompletedAlert, setShowClearCompletedAlert] = useState(false);
 
   // Profile Edit State
@@ -68,6 +75,12 @@ export default function ProfilePage() {
   const [bio, setBio] = useState(user?.bio || "");
   const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || "🦊");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Password Change State
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Task Storage Key & tasks state
   const storageKey = `todo-tasks-${user?.id}`;
@@ -84,6 +97,7 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Stats calculation
+  const totalTasks = tasks.length;
   const completedTasks = tasks.filter((t) => t.completed).length;
 
   // Joined date formatting
@@ -144,6 +158,50 @@ export default function ProfilePage() {
       });
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  // Change Password
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.add({
+        title: "Passwords mismatch",
+        description: "New password and confirmation do not match.",
+        type: "error",
+      });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.add({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long.",
+        type: "error",
+      });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await changePassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast.add({
+        title: "Password changed",
+        description: "Your password has been successfully updated.",
+        type: "success",
+      });
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to change password";
+      toast.add({
+        title: "Error",
+        description: message,
+        type: "error",
+      });
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -281,6 +339,24 @@ export default function ProfilePage() {
     });
   };
 
+  // Reset all tasks
+  const handleResetTasks = () => {
+    localStorage.removeItem(storageKey);
+    setTasks([]);
+    setShowResetTasksAlert(false);
+    toast.add({
+      title: "All tasks reset",
+      description: "Your task list has been wiped clean.",
+      type: "info",
+    });
+  };
+
+  // Delete account
+  const handleDeleteAccount = () => {
+    setShowDeleteAccountAlert(false);
+    deleteAccount();
+  };
+
   return (
     <div className="min-h-screen flex justify-center px-4 py-12">
       <Card className="w-full max-w-xl h-fit shadow-md">
@@ -363,13 +439,13 @@ export default function ProfilePage() {
 
           <Separator />
 
-          {/* Tabs */}
+          {/* Shadcn Tabs Component */}
           <Tabs
             value={activeTab}
-            onValueChange={(val) => setActiveTab(val as string)}
+            onValueChange={(val) => setActiveTab(val as TabType)}
             className="w-full flex flex-col gap-5"
           >
-            <TabsList className="w-full grid grid-cols-2">
+            <TabsList className="w-full grid grid-cols-3">
               <TabsTrigger value="profile">
                 <UserIcon className="size-3.5" />
                 Edit Profile
@@ -377,6 +453,10 @@ export default function ProfilePage() {
               <TabsTrigger value="data">
                 <Database className="size-3.5" />
                 Data & Backup
+              </TabsTrigger>
+              <TabsTrigger value="security">
+                <KeyRound className="size-3.5" />
+                Security & Danger
               </TabsTrigger>
             </TabsList>
 
@@ -567,6 +647,139 @@ export default function ProfilePage() {
                 </Button>
               </div>
             </TabsContent>
+
+            {/* Security Tab Panel */}
+            <TabsContent value="security" className="m-0 space-y-5">
+              {/* Change Password */}
+              <form onSubmit={handleChangePassword} className="space-y-3">
+                <div className="space-y-1">
+                  <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <KeyRound className="size-3.5 text-primary" />
+                    Change Password
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground">
+                    Ensure your account stays secure with a strong password
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <Label
+                    htmlFor="current-pwd"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    Current Password
+                  </Label>
+                  <Input
+                    id="current-pwd"
+                    type="password"
+                    required
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="text-sm"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label
+                    htmlFor="new-pwd"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    New Password
+                  </Label>
+                  <Input
+                    id="new-pwd"
+                    type="password"
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    className="text-sm"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label
+                    htmlFor="confirm-pwd"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    Confirm New Password
+                  </Label>
+                  <Input
+                    id="confirm-pwd"
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="text-sm"
+                  />
+                </div>
+
+                <div className="pt-1">
+                  <Button
+                    type="submit"
+                    disabled={isChangingPassword}
+                    className="w-full sm:w-auto text-xs"
+                  >
+                    {isChangingPassword ? "Updating password..." : "Update Password"}
+                  </Button>
+                </div>
+              </form>
+
+              <Separator />
+
+              {/* Danger Zone */}
+              <div className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5">
+                <div>
+                  <h4 className="text-xs font-semibold text-destructive flex items-center gap-1.5">
+                    <ShieldAlert className="size-3.5" />
+                    Danger Zone
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground">
+                    Irreversible actions affecting your tasks and account
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2.5 bg-background rounded-lg border border-destructive/20">
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">
+                      Reset All Task Data
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Permanently deletes all tasks associated with your account
+                    </p>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setShowResetTasksAlert(true)}
+                    className="text-xs"
+                  >
+                    Reset All Tasks
+                  </Button>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2.5 bg-background rounded-lg border border-destructive/20">
+                  <div>
+                    <p className="text-xs font-semibold text-destructive">
+                      Delete Account
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Wipes your credentials, profile, and all task data completely
+                    </p>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setShowDeleteAccountAlert(true)}
+                    className="text-xs"
+                  >
+                    Delete Account
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
@@ -617,6 +830,61 @@ export default function ProfilePage() {
               onClick={handleClearCompleted}
             >
               Clear Completed
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset Tasks Alert */}
+      <AlertDialog
+        open={showResetTasksAlert}
+        onOpenChange={setShowResetTasksAlert}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset all task data?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all {totalTasks} task
+              {totalTasks === 1 ? "" : "s"} from your account. This action
+              cannot be undone. Consider exporting a backup first.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowResetTasksAlert(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleResetTasks}>
+              Yes, Reset Everything
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Account Alert */}
+      <AlertDialog
+        open={showDeleteAccountAlert}
+        onOpenChange={setShowDeleteAccountAlert}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Permanently delete your account?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will completely delete your user profile, authentication
+              credentials, and all tasks. You will not be able to recover this
+              account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDeleteAccountAlert(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleDeleteAccount}
+            >
+              Permanently Delete Account
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
