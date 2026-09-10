@@ -197,8 +197,6 @@ export default function ProfilePage() {
     }
   };
 
-
-
   // Reset all tasks
   const handleResetTasks = () => {
     localStorage.removeItem(storageKey);
@@ -409,8 +407,6 @@ export default function ProfilePage() {
                 </div>
               </form>
             </TabsContent>
-
-
 
             {/* Security Tab Panel */}
             <TabsContent value="security" className="m-0 space-y-5">

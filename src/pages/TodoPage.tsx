@@ -2,7 +2,7 @@ import "../App.css";
 import TaskList from "../components/task.tsx";
 import AnalyticsDashboard from "../components/AnalyticsDashboard";
 import { useState, useEffect } from "react";
-import { AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   DndContext,
   DragOverlay,
@@ -375,36 +375,54 @@ export default function TodoPage() {
                 })()}
               </DragOverlay>
             </DndContext>
-          </AnimatedHeight>
 
-          {selectionMode && (
-            <div className="flex items-center justify-between rounded-lg border bg-muted px-3 py-2">
-              <span className="text-sm font-medium">
-                {selectedCount} selected
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={selectAll}
-                  disabled={selectedCount === task.length || task.length === 0}
+            <AnimatePresence>
+              {selectionMode && (
+                <motion.div
+                  initial={{ opacity: 0, y: 16, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  exit={{ opacity: 0, y: 16, height: 0 }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="overflow-hidden"
                 >
-                  Select All
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={selectedCount === 0}
-                  onClick={() => setShowBulkDeleteAlert(true)}
-                >
-                  Delete
-                </Button>
-                <Button variant="secondary" size="sm" onClick={clearSelection}>
-                  Done
-                </Button>
-              </div>
-            </div>
-          )}
+                  <div className="pt-2 px-1">
+                    <div className="flex items-center justify-between rounded-lg border bg-muted px-3 py-2">
+                      <span className="text-sm font-medium">
+                        {selectedCount} selected
+                      </span>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={selectAll}
+                          disabled={
+                            selectedCount === task.length || task.length === 0
+                          }
+                        >
+                          Select All
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={selectedCount === 0}
+                          onClick={() => setShowBulkDeleteAlert(true)}
+                        >
+                          Delete
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={clearSelection}
+                        >
+                          Done
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </AnimatedHeight>
         </CardContent>
       </Card>
 
