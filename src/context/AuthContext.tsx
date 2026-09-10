@@ -4,6 +4,9 @@ import {
   login as loginRequest,
   signup as signupRequest,
   logout as logoutRequest,
+  updateUserProfile as updateProfileRequest,
+  changePassword as changePasswordRequest,
+  deleteAccount as deleteAccountRequest,
   type User,
 } from "@/lib/auth";
 
@@ -12,6 +15,11 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<User>;
   signup: (email: string, password: string) => Promise<User>;
   logout: () => void;
+  updateProfile: (
+    updates: Partial<Pick<User, "name" | "bio" | "avatar">>,
+  ) => Promise<User>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  deleteAccount: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -36,13 +44,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const updateProfile = async (
+    updates: Partial<Pick<User, "name" | "bio" | "avatar">>,
+  ) => {
+    if (!user) throw new Error("No authenticated user");
+    const updated = await updateProfileRequest(user.id, updates);
+    setUser(updated);
+    return updated;
+  };
+
+  const changePassword = async (
+    currentPassword: string,
+    newPassword: string,
+  ) => {
+    if (!user) throw new Error("No authenticated user");
+    await changePasswordRequest(user.id, currentPassword, newPassword);
+  };
+
+  const deleteAccount = () => {
+    if (!user) return;
+    deleteAccountRequest(user.id);
+    setUser(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        signup,
+        logout,
+        updateProfile,
+        changePassword,
+        deleteAccount,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) {

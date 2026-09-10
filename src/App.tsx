@@ -9,6 +9,7 @@ import ProfilePage from "./pages/ProfilePage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import Background from "./assets/Background.svg";
+import { Toaster } from "@/components/ui/toast";
 
 function App() {
   const location = useLocation();
@@ -66,6 +67,7 @@ function App() {
         </AnimatePresence>
         <p className="watermark">Practicing React Project by Luqman Hayyan</p>
       </div>
+      <Toaster />
     </AuthProvider>
   );
 }
