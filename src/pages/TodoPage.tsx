@@ -79,7 +79,11 @@ export default function TodoPage() {
 
   const enterSelectionMode = (taskId: number) => {
     setSelectionMode(true);
-    setSelectedIds(new Set([taskId]));
+    setSelectedIds((prev) => {
+      const next = new Set(selectionMode ? prev : []);
+      next.add(taskId);
+      return next;
+    });
     setSearch("");
     setFilter("All");
   };
@@ -318,7 +322,7 @@ export default function TodoPage() {
                 items={filteredTask.map((t) => t.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 p-1">
                   <AnimatePresence mode="popLayout" initial={false}>
                     {filteredTask.map((task) => (
                       <TaskList
@@ -354,7 +358,7 @@ export default function TodoPage() {
                   if (!activeTask) return null;
                   return (
                     <div className="relative">
-                      <Card size="sm" className="bg-muted ring-2 ring-primary min-h-10">
+                      <Card size="sm" className="bg-muted ring-2 ring-inset ring-primary min-h-10">
                         <CardContent className="flex items-center px-4 py-2">
                           <span className="text-[1.1rem]">
                             {activeTask.text}
