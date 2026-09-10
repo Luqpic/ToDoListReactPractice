@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
   Card,
   CardHeader,
@@ -33,13 +33,9 @@ import {
   Mail,
   Calendar,
   KeyRound,
-  Download,
-  Upload,
   Copy,
   Check,
   ShieldAlert,
-  Database,
-  CheckCheck,
 } from "lucide-react";
 
 const AVATAR_PRESETS = [
@@ -55,7 +51,7 @@ const AVATAR_PRESETS = [
   "🐱",
 ];
 
-type TabType = "profile" | "data" | "security";
+type TabType = "profile" | "security";
 
 export default function ProfilePage() {
   const { user, logout, updateProfile, changePassword, deleteAccount } =
@@ -68,7 +64,6 @@ export default function ProfilePage() {
   const [showLogoutAlert, setShowLogoutAlert] = useState(false);
   const [showResetTasksAlert, setShowResetTasksAlert] = useState(false);
   const [showDeleteAccountAlert, setShowDeleteAccountAlert] = useState(false);
-  const [showClearCompletedAlert, setShowClearCompletedAlert] = useState(false);
 
   // Profile Edit State
   const [name, setName] = useState(user?.name || "");
@@ -94,11 +89,8 @@ export default function ProfilePage() {
     }
   });
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   // Stats calculation
   const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((t) => t.completed).length;
 
   // Joined date formatting
   const joinedDate = (() => {
@@ -205,139 +197,7 @@ export default function ProfilePage() {
     }
   };
 
-  // Data Export - JSON
-  const handleExportJSON = () => {
-    if (tasks.length === 0) {
-      toast.add({
-        title: "No tasks to export",
-        description: "Add some tasks before exporting.",
-        type: "info",
-      });
-      return;
-    }
-    const dataStr =
-      "data:text/json;charset=utf-8," +
-      encodeURIComponent(JSON.stringify(tasks, null, 2));
-    const downloadAnchor = document.createElement("a");
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute(
-      "download",
-      `todo-backup-${user?.email?.split("@")[0] || "tasks"}-${new Date().toISOString().slice(0, 10)}.json`,
-    );
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
 
-    toast.add({
-      title: "Exported successfully",
-      description: `Downloaded ${tasks.length} tasks as JSON.`,
-      type: "success",
-    });
-  };
-
-  // Data Export - CSV
-  const handleExportCSV = () => {
-    if (tasks.length === 0) {
-      toast.add({
-        title: "No tasks to export",
-        description: "Add some tasks before exporting.",
-        type: "info",
-      });
-      return;
-    }
-    const headers = ["ID", "Task Description", "Completed"];
-    const rows = tasks.map((t) => [
-      t.id,
-      `"${t.text.replace(/"/g, '""')}"`,
-      t.completed ? "Yes" : "No",
-    ]);
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-
-    const downloadAnchor = document.createElement("a");
-    downloadAnchor.setAttribute("href", encodeURI(csvContent));
-    downloadAnchor.setAttribute(
-      "download",
-      `todo-backup-${user?.email?.split("@")[0] || "tasks"}-${new Date().toISOString().slice(0, 10)}.csv`,
-    );
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-
-    toast.add({
-      title: "Exported successfully",
-      description: `Downloaded ${tasks.length} tasks as CSV.`,
-      type: "success",
-    });
-  };
-
-  // Data Import - JSON
-  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (!Array.isArray(parsed)) {
-          throw new Error("Invalid file: Must contain an array of tasks.");
-        }
-        const validTasks: Task[] = parsed
-          .filter((item) => item && typeof item.text === "string")
-          .map((item, idx) => ({
-            id: typeof item.id === "number" ? item.id : Date.now() + idx,
-            text: String(item.text),
-            completed: Boolean(item.completed),
-          }));
-
-        if (validTasks.length === 0) {
-          throw new Error("No valid task entries found in the file.");
-        }
-
-        const existingIds = new Set(tasks.map((t) => t.id));
-        const newTasks = validTasks.filter((t) => !existingIds.has(t.id));
-        const merged = [...tasks, ...newTasks];
-
-        localStorage.setItem(storageKey, JSON.stringify(merged));
-        setTasks(merged);
-
-        toast.add({
-          title: "Tasks imported",
-          description: `Imported ${newTasks.length} new tasks successfully!`,
-          type: "success",
-        });
-      } catch (err: unknown) {
-        const message =
-          err instanceof Error ? err.message : "Failed to parse JSON";
-        toast.add({
-          title: "Import failed",
-          description: message,
-          type: "error",
-        });
-      } finally {
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  // Clear completed tasks
-  const handleClearCompleted = () => {
-    const uncompleted = tasks.filter((t) => !t.completed);
-    const countCleared = tasks.length - uncompleted.length;
-    localStorage.setItem(storageKey, JSON.stringify(uncompleted));
-    setTasks(uncompleted);
-    setShowClearCompletedAlert(false);
-    toast.add({
-      title: "Completed tasks cleared",
-      description: `Removed ${countCleared} completed task${countCleared === 1 ? "" : "s"}.`,
-      type: "success",
-    });
-  };
 
   // Reset all tasks
   const handleResetTasks = () => {
@@ -445,14 +305,10 @@ export default function ProfilePage() {
             onValueChange={(val) => setActiveTab(val as TabType)}
             className="w-full flex flex-col gap-5"
           >
-            <TabsList className="w-full grid grid-cols-3">
+            <TabsList className="w-full grid grid-cols-2">
               <TabsTrigger value="profile">
                 <UserIcon className="size-3.5" />
                 Edit Profile
-              </TabsTrigger>
-              <TabsTrigger value="data">
-                <Database className="size-3.5" />
-                Data & Backup
               </TabsTrigger>
               <TabsTrigger value="security">
                 <KeyRound className="size-3.5" />
@@ -554,99 +410,7 @@ export default function ProfilePage() {
               </form>
             </TabsContent>
 
-            {/* Data & Backup Tab Panel */}
-            <TabsContent value="data" className="m-0 space-y-4">
-              {/* Export & Backup */}
-              <div className="space-y-2">
-                <div>
-                  <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                    <Download className="size-3.5 text-primary" />
-                    Export & Backup Tasks
-                  </h4>
-                  <p className="text-[11px] text-muted-foreground">
-                    Download your tasks to keep a local backup or migrate to another device
-                  </p>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2.5">
-                  <Button
-                    variant="outline"
-                    className="flex-1 justify-center gap-2 h-9 text-xs"
-                    onClick={handleExportJSON}
-                  >
-                    <Download className="size-3.5" />
-                    Export as JSON (.json)
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 justify-center gap-2 h-9 text-xs"
-                    onClick={handleExportCSV}
-                  >
-                    <Download className="size-3.5" />
-                    Export as CSV (.csv)
-                  </Button>
-                </div>
-              </div>
 
-              <Separator />
-
-              {/* Import Tasks */}
-              <div className="space-y-2">
-                <div>
-                  <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                    <Upload className="size-3.5 text-primary" />
-                    Import Tasks
-                  </h4>
-                  <p className="text-[11px] text-muted-foreground">
-                    Restore previously exported tasks from a JSON backup file
-                  </p>
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".json,application/json"
-                  onChange={handleImportJSON}
-                  className="hidden"
-                />
-                <div className="border-2 border-dashed rounded-xl p-5 text-center hover:bg-muted/40 transition-all flex flex-col items-center justify-center gap-2">
-                  <Database className="size-7 text-muted-foreground/60" />
-                  <p className="text-xs text-muted-foreground">
-                    Upload a valid JSON backup file to merge tasks
-                  </p>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="mt-1 text-xs"
-                  >
-                    Select JSON File
-                  </Button>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Clean up completed tasks */}
-              <div className="flex items-center justify-between gap-4 p-3 rounded-lg border bg-muted/20">
-                <div>
-                  <p className="text-xs font-medium flex items-center gap-1.5">
-                    <CheckCheck className="size-3.5 text-emerald-500" />
-                    {completedTasks} completed task{completedTasks === 1 ? "" : "s"} found
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    Keep your workspace tidy by clearing finished items.
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={completedTasks === 0}
-                  onClick={() => setShowClearCompletedAlert(true)}
-                  className="text-xs"
-                >
-                  Clear Completed
-                </Button>
-              </div>
-            </TabsContent>
 
             {/* Security Tab Panel */}
             <TabsContent value="security" className="m-0 space-y-5">
@@ -722,7 +486,9 @@ export default function ProfilePage() {
                     disabled={isChangingPassword}
                     className="w-full sm:w-auto text-xs"
                   >
-                    {isChangingPassword ? "Updating password..." : "Update Password"}
+                    {isChangingPassword
+                      ? "Updating password..."
+                      : "Update Password"}
                   </Button>
                 </div>
               </form>
@@ -766,7 +532,8 @@ export default function ProfilePage() {
                       Delete Account
                     </p>
                     <p className="text-[11px] text-muted-foreground">
-                      Wipes your credentials, profile, and all task data completely
+                      Wipes your credentials, profile, and all task data
+                      completely
                     </p>
                   </div>
                   <Button
@@ -805,36 +572,6 @@ export default function ProfilePage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Clear Completed Alert */}
-      <AlertDialog
-        open={showClearCompletedAlert}
-        onOpenChange={setShowClearCompletedAlert}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Clear completed tasks?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will remove all finished tasks ({completedTasks} item
-              {completedTasks === 1 ? "" : "s"}). Active pending tasks will not
-              be affected.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={() => setShowClearCompletedAlert(false)}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={handleClearCompleted}
-            >
-              Clear Completed
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Reset Tasks Alert */}
       <AlertDialog
         open={showResetTasksAlert}
@@ -846,7 +583,7 @@ export default function ProfilePage() {
             <AlertDialogDescription>
               This will permanently delete all {totalTasks} task
               {totalTasks === 1 ? "" : "s"} from your account. This action
-              cannot be undone. Consider exporting a backup first.
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
