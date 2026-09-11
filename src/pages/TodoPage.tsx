@@ -59,6 +59,9 @@ import { Plus, GripVertical } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
 
+// Drop animation for dnd-kit's DragOverlay: fades the floating clone out
+// while it eases back to the dropped item's final position, instead of
+// popping away the instant the real list settles.
 const dropAnimationConfig: DropAnimation = {
   duration: 200,
   easing: "ease",
@@ -79,8 +82,15 @@ export interface Task {
   completed: boolean;
 }
 
+// Main screen: owns the task list itself, plus every derived and UI state
+// that depends on it. Everything else in the app (TaskList rows,
+// AnalyticsDashboard) is a child that reads this state via props or asks
+// this component to change it via callbacks — see README's "Task state and
+// lifting state up" for why.
 export default function TodoPage() {
   const { user } = useAuth();
+  // Guest tasks live in sessionStorage (gone once the tab closes) instead of
+  // localStorage (permanent), so a guest genuinely can't "save" their list.
   const storageKey = `todo-tasks-${user!.id}`;
   const storage = user!.isGuest ? sessionStorage : localStorage;
 
@@ -93,9 +103,14 @@ export default function TodoPage() {
 
   const [filter, setFilter] = useState("All");
 
+  // Multi-select ("selection mode"): lets the user tick several tasks at
+  // once for a group drag or a bulk delete.
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
+  // Enters selection mode (if not already in it) and marks `taskId` as the
+  // first selected row. Also clears search/filter since selection mode only
+  // makes sense against the full, unfiltered list.
   const enterSelectionMode = (taskId: number) => {
     setSelectionMode(true);
     setSelectedIds((prev) => {
@@ -138,13 +153,20 @@ export default function TodoPage() {
 
   const selectedCount = task.filter((t) => selectedIds.has(t.id)).length;
 
+  // Reordering is only safe against the full, unfiltered, unsearched list —
+  // a filtered subset's on-screen order wouldn't map cleanly onto indices
+  // in the underlying `task` array.
   const canReorder = filter === "All" && search.trim() === "";
 
+  // dnd-kit sensors: pointer drag (with a small activation distance so a
+  // plain click/tap doesn't start a drag) and keyboard reordering.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  // Which task is currently being dragged (drives the DragOverlay and each
+  // row's dimmed/hidden state below).
   const [activeId, setActiveId] = useState<number | null>(null);
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -155,6 +177,8 @@ export default function TodoPage() {
     setActiveId(null);
   };
 
+  // Commits a drag: reorders `task` so the dragged item (or, in selection
+  // mode, the whole selected group) ends up at the drop target's position.
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
@@ -210,6 +234,9 @@ export default function TodoPage() {
     });
   };
 
+  // What's actually rendered: `task` narrowed by the active filter and
+  // search text. Recomputed every render — cheap for a to-do list, and
+  // keeps this as the single derived view rather than a second copy of state.
   const filteredTask = task
     .filter((t) => {
       if (filter === "Active") return !t.completed;
@@ -218,6 +245,7 @@ export default function TodoPage() {
     })
     .filter((t) => t.text.toLowerCase().includes(search.toLowerCase()));
 
+  // Persist on every change, to whichever backend this session uses.
   useEffect(() => {
     storage.setItem(storageKey, JSON.stringify(task));
   }, [task, storageKey, storage]);
@@ -247,6 +275,9 @@ export default function TodoPage() {
     setTask(updatedTasks);
   };
 
+  // Deletion goes through a confirmation dialog: `taskToDelete` holds the
+  // pending id (and doubles as the dialog's open/closed state) until
+  // confirmed or cancelled.
   const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
 
   const confirmDelete = () => {
@@ -287,7 +318,9 @@ export default function TodoPage() {
         </CardHeader>
 
         <CardContent className="flex flex-col gap-5">
+          {/* Live progress bar + completed/total/remaining, derived from `task`. */}
           <AnalyticsDashboard tasks={task} />
+          {/* New task input; Enter key or the button both call addtask(). */}
           <div className="flex flex-col gap-2">
             <Input
               type="text"
@@ -301,6 +334,8 @@ export default function TodoPage() {
             </Button>
           </div>
 
+          {/* Search text + status filter; both disabled while in selection
+              mode (see enterSelectionMode) and both drive `filteredTask`. */}
           <div className="flex gap-2">
             <Input
               type="text"
@@ -329,7 +364,10 @@ export default function TodoPage() {
             </Select>
           </div>
 
+          {/* Smoothly resizes as the task list grows/shrinks/filters. */}
           <AnimatedHeight>
+            {/* dnd-kit's drag context: wires up sensors and the
+                start/end/cancel handlers that actually reorder `task`. */}
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -337,11 +375,15 @@ export default function TodoPage() {
               onDragEnd={handleDragEnd}
               onDragCancel={handleDragCancel}
             >
+              {/* Tells dnd-kit the draggable set and their order, so it can
+                  compute drag-over positions and swap previews. */}
               <SortableContext
                 items={filteredTask.map((t) => t.id)}
                 strategy={verticalListSortingStrategy}
               >
                 <div className="flex flex-col gap-2 p-1">
+                  {/* Animates rows in/out as they're added, deleted, or
+                      filtered out of view. */}
                   <AnimatePresence mode="popLayout" initial={false}>
                     {filteredTask.map((task) => (
                       <TaskList
@@ -367,6 +409,11 @@ export default function TodoPage() {
                   </AnimatePresence>
                 </div>
               </SortableContext>
+              {/* Floating clone that follows the cursor while dragging —
+                  keeps the real list item from having to double as the
+                  drag preview, which is what made drops look glitchy before.
+                  Shows a matching grip+checkbox+text so nothing appears to
+                  vanish mid-drag, plus a count badge for a group drag. */}
               <DragOverlay dropAnimation={dropAnimationConfig}>
                 {(() => {
                   if (activeId === null) return null;
@@ -403,6 +450,8 @@ export default function TodoPage() {
               </DragOverlay>
             </DndContext>
 
+            {/* Selection-mode toolbar: select all / bulk delete / done.
+                Slides in only while selectionMode is active. */}
             <AnimatePresence>
               {selectionMode && (
                 <motion.div
@@ -453,6 +502,7 @@ export default function TodoPage() {
         </CardContent>
       </Card>
 
+      {/* Single-task delete confirmation, driven by taskToDelete. */}
       <AlertDialog
         open={taskToDelete !== null}
         onOpenChange={(open) => {
@@ -478,6 +528,7 @@ export default function TodoPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Bulk delete confirmation for selection mode's "Delete" button. */}
       <AlertDialog open={showBulkDeleteAlert} onOpenChange={setShowBulkDeleteAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>

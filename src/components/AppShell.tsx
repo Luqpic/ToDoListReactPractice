@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import NavMenubar from "@/components/NavMenubar";
 
+// Shared chrome for every protected page: renders the top nav bar above
+// whatever page content is passed in as `children`.
 export default function AppShell({ children }: { children: ReactNode }) {
   return (
     <>

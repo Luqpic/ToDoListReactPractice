@@ -5,6 +5,10 @@ interface AnalyticsDashboardProps {
   tasks: Task[];
 }
 
+// Read-only summary of the task list: a progress bar plus a completed/total/
+// remaining count. Holds no state of its own — everything is derived fresh
+// from the `tasks` prop on every render, so it stays in sync with TodoPage's
+// task state automatically.
 export default function AnalyticsDashboard({ tasks }: AnalyticsDashboardProps) {
   const total = tasks.length;
   const completed = tasks.filter((t) => t.completed).length;
