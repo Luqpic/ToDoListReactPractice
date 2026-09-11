@@ -2,7 +2,7 @@ import "../App.css";
 import TaskList from "../components/task.tsx";
 import AnalyticsDashboard from "../components/AnalyticsDashboard";
 import { useState, useEffect } from "react";
-import { AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   DndContext,
   DragOverlay,
@@ -79,7 +79,11 @@ export default function TodoPage() {
 
   const enterSelectionMode = (taskId: number) => {
     setSelectionMode(true);
-    setSelectedIds(new Set([taskId]));
+    setSelectedIds((prev) => {
+      const next = new Set(selectionMode ? prev : []);
+      next.add(taskId);
+      return next;
+    });
     setSearch("");
     setFilter("All");
   };
@@ -318,7 +322,7 @@ export default function TodoPage() {
                 items={filteredTask.map((t) => t.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 p-1">
                   <AnimatePresence mode="popLayout" initial={false}>
                     {filteredTask.map((task) => (
                       <TaskList
@@ -347,21 +351,20 @@ export default function TodoPage() {
               <DragOverlay>
                 {(() => {
                   if (activeId === null) return null;
-                  const isGroupDrag =
-                    selectionMode && selectedIds.has(activeId);
-                  if (!isGroupDrag) return null;
                   const activeTask = task.find((t) => t.id === activeId);
                   if (!activeTask) return null;
+                  const isGroupDrag =
+                    selectionMode && selectedIds.has(activeId);
                   return (
                     <div className="relative">
-                      <Card size="sm" className="bg-muted ring-2 ring-primary min-h-10">
+                      <Card size="sm" className="bg-muted ring-2 ring-inset ring-primary min-h-10">
                         <CardContent className="flex items-center px-4 py-2">
                           <span className="text-[1.1rem]">
                             {activeTask.text}
                           </span>
                         </CardContent>
                       </Card>
-                      {selectedIds.size > 1 && (
+                      {isGroupDrag && selectedIds.size > 1 && (
                         <span className="absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
                           {selectedIds.size}
                         </span>
@@ -371,36 +374,54 @@ export default function TodoPage() {
                 })()}
               </DragOverlay>
             </DndContext>
-          </AnimatedHeight>
 
-          {selectionMode && (
-            <div className="flex items-center justify-between rounded-lg border bg-muted px-3 py-2">
-              <span className="text-sm font-medium">
-                {selectedCount} selected
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={selectAll}
-                  disabled={selectedCount === task.length || task.length === 0}
+            <AnimatePresence>
+              {selectionMode && (
+                <motion.div
+                  initial={{ opacity: 0, y: 16, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  exit={{ opacity: 0, y: 16, height: 0 }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="overflow-hidden"
                 >
-                  Select All
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={selectedCount === 0}
-                  onClick={() => setShowBulkDeleteAlert(true)}
-                >
-                  Delete
-                </Button>
-                <Button variant="secondary" size="sm" onClick={clearSelection}>
-                  Done
-                </Button>
-              </div>
-            </div>
-          )}
+                  <div className="pt-2 px-1">
+                    <div className="flex items-center justify-between rounded-lg border bg-muted px-3 py-2">
+                      <span className="text-sm font-medium">
+                        {selectedCount} selected
+                      </span>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={selectAll}
+                          disabled={
+                            selectedCount === task.length || task.length === 0
+                          }
+                        >
+                          Select All
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={selectedCount === 0}
+                          onClick={() => setShowBulkDeleteAlert(true)}
+                        >
+                          Delete
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={clearSelection}
+                        >
+                          Done
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </AnimatedHeight>
         </CardContent>
       </Card>
 

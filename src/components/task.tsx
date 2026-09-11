@@ -101,9 +101,24 @@ function TaskList({
           <ContextMenuTrigger>
             <Card
               size="sm"
+              onClick={(e) => {
+                if (!selectionMode) return;
+                // Avoid double triggering if clicking interactive elements inside card
+                if (
+                  (e.target as HTMLElement).closest(
+                    'button, [data-slot="checkbox"], input'
+                  )
+                ) {
+                  return;
+                }
+                onSelect();
+              }}
               className={cn(
-                "bg-muted ring-0 min-h-10",
-                selectionMode && isSelected && "ring-2 ring-primary",
+                "bg-muted ring-0 min-h-10 transition-all",
+                selectionMode && "cursor-pointer select-none hover:bg-muted/80",
+                selectionMode &&
+                  isSelected &&
+                  "ring-2 ring-inset ring-primary bg-accent/40",
               )}
             >
               <CardContent className="flex items-center justify-between h-full px-4 py-2 gap-2">
@@ -203,7 +218,15 @@ function TaskList({
             </Card>
           </ContextMenuTrigger>
           <ContextMenuContent>
-            <ContextMenuItem onClick={onEnterSelection}>Select</ContextMenuItem>
+            {selectionMode ? (
+              <ContextMenuItem onClick={onSelect}>
+                {isSelected ? "Deselect" : "Select"}
+              </ContextMenuItem>
+            ) : (
+              <ContextMenuItem onClick={onEnterSelection}>
+                Select
+              </ContextMenuItem>
+            )}
           </ContextMenuContent>
         </ContextMenu>
       </motion.div>
