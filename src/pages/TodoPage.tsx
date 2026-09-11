@@ -351,11 +351,10 @@ export default function TodoPage() {
               <DragOverlay>
                 {(() => {
                   if (activeId === null) return null;
-                  const isGroupDrag =
-                    selectionMode && selectedIds.has(activeId);
-                  if (!isGroupDrag) return null;
                   const activeTask = task.find((t) => t.id === activeId);
                   if (!activeTask) return null;
+                  const isGroupDrag =
+                    selectionMode && selectedIds.has(activeId);
                   return (
                     <div className="relative">
                       <Card size="sm" className="bg-muted ring-2 ring-inset ring-primary min-h-10">
@@ -365,7 +364,7 @@ export default function TodoPage() {
                           </span>
                         </CardContent>
                       </Card>
-                      {selectedIds.size > 1 && (
+                      {isGroupDrag && selectedIds.size > 1 && (
                         <span className="absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
                           {selectedIds.size}
                         </span>
