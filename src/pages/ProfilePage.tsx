@@ -38,6 +38,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 
+// Fixed set of emoji avatars a user can pick between (no image upload).
 const AVATAR_PRESETS = [
   "🦊",
   "🚀",
@@ -53,6 +54,9 @@ const AVATAR_PRESETS = [
 
 type TabType = "profile" | "security";
 
+// Account management screen: edit display name/bio/avatar, change password,
+// and destructive actions (reset tasks, delete account). Only reachable by
+// a real (non-guest) session — see ProtectedRoute's blockGuest.
 export default function ProfilePage() {
   const { user, logout, updateProfile, changePassword, deleteAccount } =
     useAuth();

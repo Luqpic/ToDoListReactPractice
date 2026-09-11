@@ -15,15 +15,18 @@ import {
 import logo from "../assets/Chatgpt.svg";
 
 function LoginPage() {
-  const { login } = useAuth();
+  const { login, continueAsGuest } = useAuth();
   const navigate = useNavigate();
 
+  // Form fields plus their own validation/submission error messages.
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Validates the email, then calls the real login flow and routes into
+  // the app on success (auth.ts reports bad credentials as a thrown error).
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setFormError("");
@@ -43,6 +46,12 @@ function LoginPage() {
     }
   };
 
+  // Skips authentication entirely and drops straight into the app as Guest.
+  const handleGuest = () => {
+    continueAsGuest();
+    navigate("/");
+  };
+
   return (
     <div className="min-h-screen flex justify-center px-4 py-12">
       <Card className="w-full max-w-sm h-fit shadow-md">
@@ -56,6 +65,8 @@ function LoginPage() {
           <CardDescription>Welcome back</CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Email/password form; guest button below is a separate,
+              non-submitting action on the same card. */}
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-1">
               <Input
@@ -79,6 +90,15 @@ function LoginPage() {
             )}
             <Button type="submit" className="w-full h-10" disabled={submitting}>
               {submitting ? "Logging in..." : "Log in"}
+            </Button>
+            {/* Bypasses auth: see continueAsGuest() in AuthContext. */}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-10"
+              onClick={handleGuest}
+            >
+              Continue as Guest
             </Button>
             <p className="text-sm text-center text-muted-foreground">
               No account?{" "}

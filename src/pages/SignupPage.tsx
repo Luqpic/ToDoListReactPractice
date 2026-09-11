@@ -21,16 +21,22 @@ function SignupPage() {
   const { signup } = useAuth();
   const navigate = useNavigate();
 
+  // Form fields for the new account.
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // Per-field validation errors, plus a general error for the signup
+  // request itself (e.g. "Email already registered").
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [confirmError, setConfirmError] = useState("");
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Validates all three fields up front (so every problem shows at once,
+  // not one submit attempt at a time), then creates the account and logs
+  // straight in on success.
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setFormError("");

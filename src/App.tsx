@@ -12,17 +12,27 @@ import Background from "./assets/Background.svg";
 import { Toaster } from "@/components/ui/toast";
 
 function App() {
+  // `location` is re-read on every navigation so it can key the <Routes>
+  // below, which is what lets AnimatePresence detect a route change and
+  // play an exit/enter transition instead of swapping instantly.
   const location = useLocation();
 
   return (
+    // AuthProvider makes useAuth() (session state, login/signup/guest/logout)
+    // available to every route, including the ones rendered inside it below.
     <AuthProvider>
       <div className="relative min-h-screen w-full">
+        {/* Full-page background image, sits behind all routed content */}
         <div
           className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat pointer-events-none"
           style={{ backgroundImage: `url(${Background})` }}
         />
+        {/* mode="wait" holds the outgoing page's exit animation until it
+            finishes before mounting the next page, so routes cross-fade
+            instead of overlapping. */}
         <AnimatePresence mode="wait" initial={false}>
           <Routes location={location} key={location.pathname}>
+            {/* Public routes: reachable whether or not the user is logged in */}
             <Route
               path="/login"
               element={
@@ -39,6 +49,8 @@ function App() {
                 </PageTransition>
               }
             />
+            {/* Main to-do list: requires a session (real or guest), wrapped in
+                AppShell so it gets the top nav bar. */}
             <Route
               path="/"
               element={
@@ -51,10 +63,12 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            {/* Account settings: requires a real session — `blockGuest` bounces
+                guest sessions back to "/" since there's no account to manage. */}
             <Route
               path="/profile"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute blockGuest>
                   <AppShell>
                     <PageTransition>
                       <ProfilePage />
