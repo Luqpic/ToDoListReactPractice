@@ -7,10 +7,12 @@ import {
   DndContext,
   DragOverlay,
   closestCenter,
+  defaultDropAnimationSideEffects,
   PointerSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
+  type DropAnimation,
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
@@ -19,6 +21,7 @@ import {
   verticalListSortingStrategy,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import AnimatedHeight from "../components/AnimatedHeight";
 
 import { Button } from "@/components/ui/button";
@@ -50,10 +53,25 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Toaster, toast } from "@/components/ui/toast";
+import { Checkbox } from "@/components/ui/checkbox";
 import logo from "../assets/Chatgpt.svg";
-import { Plus } from "lucide-react";
+import { Plus, GripVertical } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
+
+const dropAnimationConfig: DropAnimation = {
+  duration: 200,
+  easing: "ease",
+  keyframes({ transform }) {
+    return [
+      { opacity: 1, transform: CSS.Transform.toString(transform.initial) },
+      { opacity: 0, transform: CSS.Transform.toString(transform.final) },
+    ];
+  },
+  sideEffects: defaultDropAnimationSideEffects({
+    styles: { active: { opacity: "1" } },
+  }),
+};
 
 export interface Task {
   id: number;
@@ -348,7 +366,7 @@ export default function TodoPage() {
                   </AnimatePresence>
                 </div>
               </SortableContext>
-              <DragOverlay>
+              <DragOverlay dropAnimation={dropAnimationConfig}>
                 {(() => {
                   if (activeId === null) return null;
                   const activeTask = task.find((t) => t.id === activeId);
@@ -356,10 +374,19 @@ export default function TodoPage() {
                   const isGroupDrag =
                     selectionMode && selectedIds.has(activeId);
                   return (
-                    <div className="relative">
+                    <div className="relative animate-in fade-in-0 zoom-in-95 duration-150">
                       <Card size="sm" className="bg-muted ring-2 ring-inset ring-primary min-h-10">
-                        <CardContent className="flex items-center px-4 py-2">
-                          <span className="text-[1.1rem]">
+                        <CardContent className="flex items-center px-4 py-2 gap-2">
+                          <span className="shrink-0 text-muted-foreground">
+                            <GripVertical size={18} />
+                          </span>
+                          <Checkbox
+                            checked={
+                              isGroupDrag ? true : activeTask.completed
+                            }
+                            disabled
+                          />
+                          <span className="text-[1.1rem] flex-1">
                             {activeTask.text}
                           </span>
                         </CardContent>
