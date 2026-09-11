@@ -15,7 +15,7 @@ import {
 import logo from "../assets/Chatgpt.svg";
 
 function LoginPage() {
-  const { login } = useAuth();
+  const { login, continueAsGuest } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -41,6 +41,11 @@ function LoginPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleGuest = () => {
+    continueAsGuest();
+    navigate("/");
   };
 
   return (
@@ -79,6 +84,14 @@ function LoginPage() {
             )}
             <Button type="submit" className="w-full h-10" disabled={submitting}>
               {submitting ? "Logging in..." : "Log in"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-10"
+              onClick={handleGuest}
+            >
+              Continue as Guest
             </Button>
             <p className="text-sm text-center text-muted-foreground">
               No account?{" "}

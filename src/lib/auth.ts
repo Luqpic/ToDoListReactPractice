@@ -1,5 +1,6 @@
 const USERS_KEY = "todo-users";
 const SESSION_KEY = "todo-session";
+const GUEST_SESSION_KEY = "todo-guest-session";
 
 export interface User {
   id: string;
@@ -8,6 +9,7 @@ export interface User {
   bio?: string;
   avatar?: string;
   createdAt?: string;
+  isGuest?: boolean;
 }
 
 interface StoredUser extends User {
@@ -36,6 +38,7 @@ function writeUsers(users: StoredUser[]): void {
 }
 
 function writeSession(user: User): void {
+  sessionStorage.removeItem(GUEST_SESSION_KEY);
   localStorage.setItem(SESSION_KEY, JSON.stringify(user));
 }
 
@@ -144,11 +147,28 @@ export function deleteAccount(userId: string): void {
 
 export function logout(): void {
   localStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(GUEST_SESSION_KEY);
 }
 
 export function getSession(): User | null {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function continueAsGuest(): User {
+  localStorage.removeItem(SESSION_KEY);
+  const guest: User = { id: "guest", email: "", name: "Guest", isGuest: true };
+  sessionStorage.setItem(GUEST_SESSION_KEY, JSON.stringify(guest));
+  return guest;
+}
+
+export function getGuestSession(): User | null {
+  try {
+    const raw = sessionStorage.getItem(GUEST_SESSION_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;

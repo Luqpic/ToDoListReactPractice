@@ -54,7 +54,7 @@ function App() {
             <Route
               path="/profile"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute blockGuest>
                   <AppShell>
                     <PageTransition>
                       <ProfilePage />

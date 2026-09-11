@@ -82,10 +82,11 @@ export interface Task {
 export default function TodoPage() {
   const { user } = useAuth();
   const storageKey = `todo-tasks-${user!.id}`;
+  const storage = user!.isGuest ? sessionStorage : localStorage;
 
   const [input, setInput] = useState("");
   const [task, setTask] = useState<Task[]>(() => {
-    const stored = localStorage.getItem(storageKey);
+    const stored = storage.getItem(storageKey);
     return stored ? JSON.parse(stored) : [];
   });
   const [search, setSearch] = useState("");
@@ -218,8 +219,8 @@ export default function TodoPage() {
     .filter((t) => t.text.toLowerCase().includes(search.toLowerCase()));
 
   useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(task));
-  }, [task, storageKey]);
+    storage.setItem(storageKey, JSON.stringify(task));
+  }, [task, storageKey, storage]);
 
   const addtask = () => {
     if (input.trim() === "") return;

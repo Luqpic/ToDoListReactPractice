@@ -1,9 +1,11 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import {
   getSession,
+  getGuestSession,
   login as loginRequest,
   signup as signupRequest,
   logout as logoutRequest,
+  continueAsGuest as continueAsGuestRequest,
   updateUserProfile as updateProfileRequest,
   changePassword as changePasswordRequest,
   deleteAccount as deleteAccountRequest,
@@ -14,6 +16,7 @@ interface AuthContextValue {
   user: User | null;
   login: (email: string, password: string) => Promise<User>;
   signup: (email: string, password: string) => Promise<User>;
+  continueAsGuest: () => User;
   logout: () => void;
   updateProfile: (
     updates: Partial<Pick<User, "name" | "bio" | "avatar">>,
@@ -25,7 +28,9 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => getSession());
+  const [user, setUser] = useState<User | null>(
+    () => getSession() ?? getGuestSession(),
+  );
 
   const login = async (email: string, password: string) => {
     const session = await loginRequest(email, password);
@@ -37,6 +42,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const session = await signupRequest(email, password);
     setUser(session);
     return session;
+  };
+
+  const continueAsGuest = () => {
+    const guest = continueAsGuestRequest();
+    setUser(guest);
+    return guest;
   };
 
   const logout = () => {
@@ -73,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         login,
         signup,
+        continueAsGuest,
         logout,
         updateProfile,
         changePassword,
