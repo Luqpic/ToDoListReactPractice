@@ -2,12 +2,14 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
+import { GripVertical, CalendarDays } from "lucide-react";
+import { format, isPast, isToday } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -36,10 +38,12 @@ export interface props {
     id: number;
     text: string;
     completed: boolean;
+    dueDate?: string;
   };
   onDelete: (id: number) => void;
   onEdit: (id: number, newTask: string) => void;
   onToggle: (id: number) => void;
+  onSetDueDate: (id: number, dueDate: string | undefined) => void;
   canReorder: boolean;
   selectionMode: boolean;
   isSelected: boolean;
@@ -56,6 +60,7 @@ function TaskList({
   onDelete,
   onEdit,
   onToggle,
+  onSetDueDate,
   canReorder,
   selectionMode,
   isSelected,
@@ -69,6 +74,10 @@ function TaskList({
   const [editValue, setEditValue] = useState(task.text);
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [dueDateOpen, setDueDateOpen] = useState(false);
+  const dueDate = task.dueDate ? new Date(task.dueDate) : undefined;
+  const isOverdue =
+    dueDate && !task.completed && isPast(dueDate) && !isToday(dueDate);
 
   // In selection mode, only a selected row is draggable (for a group drag);
   // otherwise it follows the page-level canReorder flag (disabled while
@@ -200,6 +209,52 @@ function TaskList({
                 {/* While editing: a save button. Otherwise: the actions
                     popover (edit / delete). */}
                 <div className="flex gap-2 shrink-0">
+                  {/* Due date: click opens a calendar to set/change it; a
+                      date already set is shown next to the icon, in the
+                      destructive color once it's overdue and incomplete. */}
+                  <Popover open={dueDateOpen} onOpenChange={setDueDateOpen}>
+                    <PopoverTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size={dueDate ? "sm" : "icon"}
+                          aria-label="Set due date"
+                          className={cn(
+                            "text-muted-foreground hover:bg-muted-foreground/20 hover:text-foreground transition-colors",
+                            isOverdue && "text-destructive hover:text-destructive",
+                          )}
+                        />
+                      }
+                    >
+                      <CalendarDays size={16} />
+                      {dueDate && format(dueDate, "MMM d")}
+                    </PopoverTrigger>
+                    <PopoverContent side="left" align="center" className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={dueDate}
+                        onSelect={(date) => {
+                          onSetDueDate(task.id, date?.toISOString());
+                          setDueDateOpen(false);
+                        }}
+                      />
+                      {dueDate && (
+                        <div className="border-t p-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => {
+                              onSetDueDate(task.id, undefined);
+                              setDueDateOpen(false);
+                            }}
+                          >
+                            Clear due date
+                          </Button>
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
                   {isEditing ? (
                     <Button variant="outline" onClick={handleSave}>
                       <SavePen />
