@@ -80,6 +80,7 @@ export interface Task {
   id: number;
   text: string;
   completed: boolean;
+  dueDate?: string;
 }
 
 // Main screen: owns the task list itself, plus every derived and UI state
@@ -304,6 +305,13 @@ export default function TodoPage() {
     setTask(updatedTasks);
   };
 
+  const setDueDate = (taskId: number, dueDate: string | undefined) => {
+    const updatedTasks = task.map((task) =>
+      task.id === taskId ? { ...task, dueDate } : task,
+    );
+    setTask(updatedTasks);
+  };
+
   return (
     <div className="min-h-screen  flex justify-center px-4 py-12">
       <Card className="w-full max-w-xl h-fit shadow-md">
@@ -392,6 +400,7 @@ export default function TodoPage() {
                         onDelete={(id) => setTaskToDelete(id)}
                         onEdit={editTask}
                         onToggle={toggleComplete}
+                        onSetDueDate={setDueDate}
                         canReorder={canReorder}
                         selectionMode={selectionMode}
                         isSelected={selectedIds.has(task.id)}
