@@ -1,11 +1,5 @@
-import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import {
-  isValidEmail,
-  isValidPassword,
-  passwordsMatch,
-} from "@/lib/validators";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,52 +10,36 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import logo from "../assets/Chatgpt.svg";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signupSchema, type SignupValues } from "@/lib/schemas";
 
 function SignupPage() {
   const { signup } = useAuth();
   const navigate = useNavigate();
 
-  // Form fields for the new account.
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  // react-hook-form owns the field values, the validation errors and the
+  // in-flight flag, so this component keeps no form state of its own.
+  // signupSchema is the single source of truth for both the rules and the
+  // TypeScript type of `values` below.
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<SignupValues>({ resolver: zodResolver(signupSchema) });
 
-  // Per-field validation errors, plus a general error for the signup
-  // request itself (e.g. "Email already registered").
-  const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [confirmError, setConfirmError] = useState("");
-  const [formError, setFormError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  // Validates all three fields up front (so every problem shows at once,
-  // not one submit attempt at a time), then creates the account and logs
-  // straight in on success.
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setFormError("");
-
-    const nextEmailError = isValidEmail(email) ? "" : "Enter a valid email";
-    const nextPasswordError = isValidPassword(password)
-      ? ""
-      : "Password must be at least 8 characters";
-    const nextConfirmError = passwordsMatch(password, confirmPassword)
-      ? ""
-      : "Passwords do not match";
-
-    setEmailError(nextEmailError);
-    setPasswordError(nextPasswordError);
-    setConfirmError(nextConfirmError);
-    if (nextEmailError || nextPasswordError || nextConfirmError) return;
-
-    setSubmitting(true);
+  // Only runs once the schema passes, so `values` is already valid here.
+  // Failures from signup() itself (e.g. "Email already registered") aren't
+  // tied to one field, so they go on the form root.
+  const onSubmit = async (values: SignupValues) => {
     try {
-      await signup(email, password);
+      await signup(values.email, values.password);
       navigate("/");
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Signup failed");
-    } finally {
-      setSubmitting(false);
+      setError("root", {
+        message: err instanceof Error ? err.message : "Signup failed",
+      });
     }
   };
 
@@ -78,28 +56,30 @@ function SignupPage() {
           <CardDescription>Create an account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          {/* noValidate hands validation to zod: without it the browser's own
+              type="email" check fires first and shows its own tooltip. */}
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+          >
             <div className="flex flex-col gap-1">
-              <Input
-                type="email"
-                placeholder="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              {emailError && (
-                <span className="text-sm text-destructive">{emailError}</span>
+              <Input type="email" placeholder="email" {...register("email")} />
+              {errors.email && (
+                <span className="text-sm text-destructive">
+                  {errors.email.message}
+                </span>
               )}
             </div>
             <div className="flex flex-col gap-1">
               <Input
                 type="password"
                 placeholder="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                {...register("password")}
               />
-              {passwordError && (
+              {errors.password && (
                 <span className="text-sm text-destructive">
-                  {passwordError}
+                  {errors.password.message}
                 </span>
               )}
             </div>
@@ -107,18 +87,25 @@ function SignupPage() {
               <Input
                 type="password"
                 placeholder="confirm password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                {...register("confirmPassword")}
               />
-              {confirmError && (
-                <span className="text-sm text-destructive">{confirmError}</span>
+              {errors.confirmPassword && (
+                <span className="text-sm text-destructive">
+                  {errors.confirmPassword.message}
+                </span>
               )}
             </div>
-            {formError && (
-              <span className="text-sm text-destructive">{formError}</span>
+            {errors.root && (
+              <span className="text-sm text-destructive">
+                {errors.root.message}
+              </span>
             )}
-            <Button type="submit" className="w-full h-10" disabled={submitting}>
-              {submitting ? "Creating account..." : "Sign up"}
+            <Button
+              type="submit"
+              className="w-full h-10"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Creating account..." : "Sign up"}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
               Already have an account?{" "}

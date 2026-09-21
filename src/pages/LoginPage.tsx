@@ -1,8 +1,9 @@
 // src/pages/LoginPage.tsx
-import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/context/AuthContext";
-import { isValidEmail } from "@/lib/validators";
+import { loginSchema, type LoginValues } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,31 +19,24 @@ function LoginPage() {
   const { login, continueAsGuest } = useAuth();
   const navigate = useNavigate();
 
-  // Form fields plus their own validation/submission error messages.
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [formError, setFormError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginValues>({ resolver: zodResolver(loginSchema) });
 
-  // Validates the email, then calls the real login flow and routes into
-  // the app on success (auth.ts reports bad credentials as a thrown error).
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setFormError("");
-
-    const nextEmailError = isValidEmail(email) ? "" : "Enter a valid email";
-    setEmailError(nextEmailError);
-    if (nextEmailError) return;
-
-    setSubmitting(true);
+  // Only runs once the schema passes. Bad credentials come back as a thrown
+  // error from auth.ts and aren't tied to a single field, so they land on
+  // the form root.
+  const onSubmit = async (values: LoginValues) => {
     try {
-      await login(email, password);
+      await login(values.email, values.password);
       navigate("/");
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Login failed");
-    } finally {
-      setSubmitting(false);
+      setError("root", {
+        message: err instanceof Error ? err.message : "Login failed",
+      });
     }
   };
 
@@ -67,29 +61,44 @@ function LoginPage() {
         <CardContent>
           {/* Email/password form; guest button below is a separate,
               non-submitting action on the same card. */}
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          {/* noValidate hands validation to zod: without it the browser's own
+              type="email" check fires first and shows its own tooltip. */}
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+          >
             <div className="flex flex-col gap-1">
-              <Input
-                type="email"
-                placeholder="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              {emailError && (
-                <span className="text-sm text-destructive">{emailError}</span>
+              <Input type="email" placeholder="email" {...register("email")} />
+              {errors.email && (
+                <span className="text-sm text-destructive">
+                  {errors.email.message}
+                </span>
               )}
             </div>
-            <Input
-              type="password"
-              placeholder="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            {formError && (
-              <span className="text-sm text-destructive">{formError}</span>
+            <div className="flex flex-col gap-1">
+              <Input
+                type="password"
+                placeholder="password"
+                {...register("password")}
+              />
+              {errors.password && (
+                <span className="text-sm text-destructive">
+                  {errors.password.message}
+                </span>
+              )}
+            </div>
+            {errors.root && (
+              <span className="text-sm text-destructive">
+                {errors.root.message}
+              </span>
             )}
-            <Button type="submit" className="w-full h-10" disabled={submitting}>
-              {submitting ? "Logging in..." : "Log in"}
+            <Button
+              type="submit"
+              className="w-full h-10"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Logging in..." : "Log in"}
             </Button>
             {/* Bypasses auth: see continueAsGuest() in AuthContext. */}
             <Button
