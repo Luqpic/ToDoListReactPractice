@@ -238,13 +238,21 @@ export default function TodoPage() {
   // What's actually rendered: `task` narrowed by the active filter and
   // search text. Recomputed every render — cheap for a to-do list, and
   // keeps this as the single derived view rather than a second copy of state.
+  // "Priority" narrows to open tasks that actually have a due date, then
+  // sorts nearest-first — reordering stays off for it (see canReorder above)
+  // since date order, not manual order, is the point of this view.
   const filteredTask = task
     .filter((t) => {
       if (filter === "Active") return !t.completed;
       if (filter === "Completed") return t.completed;
+      if (filter === "Priority") return !t.completed && t.dueDate !== undefined;
       return true;
     })
-    .filter((t) => t.text.toLowerCase().includes(search.toLowerCase()));
+    .filter((t) => t.text.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      if (filter !== "Priority") return 0;
+      return new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime();
+    });
 
   // Persist on every change, to whichever backend this session uses.
   useEffect(() => {
@@ -367,6 +375,7 @@ export default function TodoPage() {
                   <SelectItem value="All">All</SelectItem>
                   <SelectItem value="Active">Active</SelectItem>
                   <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="Priority">Priority</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
