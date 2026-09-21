@@ -1,7 +1,8 @@
 import "../App.css";
 import TaskList from "../components/task.tsx";
 import AnalyticsDashboard from "../components/AnalyticsDashboard";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import CommandPalette from "../components/CommandPalette";
 import { AnimatePresence, motion } from "motion/react";
 import {
   DndContext,
@@ -104,6 +105,21 @@ export default function TodoPage() {
 
   const [filter, setFilter] = useState("All");
 
+  // ⌘K / Ctrl+K opens the command palette from anywhere on this page.
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const newTaskInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   // Multi-select ("selection mode"): lets the user tick several tasks at
   // once for a group drag or a bulk delete.
   const [selectionMode, setSelectionMode] = useState(false);
@@ -163,7 +179,9 @@ export default function TodoPage() {
   // plain click/tap doesn't start a drag) and keyboard reordering.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   // Which task is currently being dragged (drives the DragOverlay and each
@@ -339,6 +357,7 @@ export default function TodoPage() {
           {/* New task input; Enter key or the button both call addtask(). */}
           <div className="flex flex-col gap-2">
             <Input
+              ref={newTaskInputRef}
               type="text"
               placeholder="add item . . ."
               value={input}
@@ -441,15 +460,16 @@ export default function TodoPage() {
                     selectionMode && selectedIds.has(activeId);
                   return (
                     <div className="relative animate-in fade-in-0 zoom-in-95 duration-150">
-                      <Card size="sm" className="bg-muted ring-2 ring-inset ring-primary min-h-10">
+                      <Card
+                        size="sm"
+                        className="bg-muted ring-2 ring-inset ring-primary min-h-10"
+                      >
                         <CardContent className="flex items-center px-4 py-2 gap-2">
                           <span className="shrink-0 text-muted-foreground">
                             <GripVertical size={18} />
                           </span>
                           <Checkbox
-                            checked={
-                              isGroupDrag ? true : activeTask.completed
-                            }
+                            checked={isGroupDrag ? true : activeTask.completed}
                             disabled
                           />
                           <span className="text-[1.1rem] flex-1">
@@ -547,7 +567,10 @@ export default function TodoPage() {
       </AlertDialog>
 
       {/* Bulk delete confirmation for selection mode's "Delete" button. */}
-      <AlertDialog open={showBulkDeleteAlert} onOpenChange={setShowBulkDeleteAlert}>
+      <AlertDialog
+        open={showBulkDeleteAlert}
+        onOpenChange={setShowBulkDeleteAlert}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {selectedCount} tasks?</AlertDialogTitle>
@@ -566,6 +589,14 @@ export default function TodoPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        tasks={task}
+        onToggle={toggleComplete}
+        onSetFilter={setFilter}
+        onNewTask={() => newTaskInputRef.current?.focus()}
+      />
       <Toaster />
     </div>
   );
