@@ -24,6 +24,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import AnimatedHeight from "../components/AnimatedHeight";
+import { moveTasks } from "@/lib/reorder";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -207,50 +208,8 @@ export default function TodoPage() {
     const overIdNum = over.id as number;
     const isGroupDrag = selectionMode && selectedIds.has(activeIdNum);
 
-    setTask((prev) => {
-      const movingIds = isGroupDrag
-        ? prev.filter((t) => selectedIds.has(t.id)).map((t) => t.id)
-        : [activeIdNum];
-
-      const remaining = prev.filter((t) => !movingIds.includes(t.id));
-      const moving = prev.filter((t) => movingIds.includes(t.id));
-
-      const overIndexInRemaining = remaining.findIndex(
-        (t) => t.id === overIdNum,
-      );
-
-      let insertAt: number;
-      if (overIndexInRemaining === -1) {
-        // Dropping onto another already-selected task (which was just
-        // filtered out of `remaining`) falls back to appending at the end.
-        // Known first-pass limitation — flagged in the spec for follow-up
-        // once this is tried out.
-        insertAt = remaining.length;
-      } else {
-        const overOriginalIndex = prev.findIndex((t) => t.id === overIdNum);
-        const movingOriginalIndices = movingIds.map((id) =>
-          prev.findIndex((t) => t.id === id),
-        );
-        const maxMovingOriginalIndex = Math.max(...movingOriginalIndices);
-        // Dragging strictly past every moving item (the drop target's
-        // original index is after all of them) lands the moved block
-        // immediately AFTER the target — this matches dnd-kit's
-        // arrayMove semantics for a plain forward single-item drag.
-        // Otherwise (a backward drag, or the target originally sitting
-        // between two moving items) the block lands immediately BEFORE
-        // the target.
-        insertAt =
-          overOriginalIndex > maxMovingOriginalIndex
-            ? overIndexInRemaining + 1
-            : overIndexInRemaining;
-      }
-
-      return [
-        ...remaining.slice(0, insertAt),
-        ...moving,
-        ...remaining.slice(insertAt),
-      ];
-    });
+    const movingIds = isGroupDrag ? selectedIds : new Set([activeIdNum]);
+    setTask((prev) => moveTasks(prev, movingIds, overIdNum));
   };
 
   // What's actually rendered: `task` narrowed by the active filter and
