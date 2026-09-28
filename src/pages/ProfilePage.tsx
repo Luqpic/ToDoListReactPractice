@@ -1,4 +1,12 @@
 import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  ProfileSchema,
+  PasswordChangeSchema,
+  type ProfileValues,
+  type PasswordChangeValues,
+} from "@/lib/schemas";
 import {
   Card,
   CardHeader,
@@ -69,17 +77,35 @@ export default function ProfilePage() {
   const [showResetTasksAlert, setShowResetTasksAlert] = useState(false);
   const [showDeleteAccountAlert, setShowDeleteAccountAlert] = useState(false);
 
-  // Profile Edit State
-  const [name, setName] = useState(user?.name || "");
-  const [bio, setBio] = useState(user?.bio || "");
-  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || "🦊");
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  // Two independent forms live on this page, so each useForm's members are
+  // aliased apart. The avatar picker is buttons rather than an input, so it
+  // uses watch/setValue instead of register.
+  const {
+    register: registerProfile,
+    handleSubmit: handleProfileSubmit,
+    control: profileControl,
+    setValue: setProfileValue,
+    formState: { errors: profileErrors, isSubmitting: isSavingProfile },
+  } = useForm<ProfileValues>({
+    resolver: zodResolver(ProfileSchema),
+    defaultValues: {
+      name: user?.name || "",
+      bio: user?.bio || "",
+      avatar: user?.avatar || "🦊",
+    },
+  });
+  // useWatch rather than watch(): watch() returns a fresh function each
+  // render, which makes React Compiler bail out of memoizing this component.
+  const selectedAvatar = useWatch({ control: profileControl, name: "avatar" });
 
-  // Password Change State
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const {
+    register: registerPassword,
+    handleSubmit: handlePasswordSubmit,
+    reset: resetPasswordForm,
+    formState: { errors: passwordErrors, isSubmitting: isChangingPassword },
+  } = useForm<PasswordChangeValues>({
+    resolver: zodResolver(PasswordChangeSchema),
+  });
 
   // Task Storage Key & tasks state
   const storageKey = `todo-tasks-${user?.id}`;
@@ -129,15 +155,13 @@ export default function ProfilePage() {
     setTimeout(() => setCopiedId(false), 2000);
   };
 
-  // Save Profile Details
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSavingProfile(true);
+  // Save Profile Details. Values arrive already validated and trimmed.
+  const onSaveProfile = async (values: ProfileValues) => {
     try {
       await updateProfile({
-        name: name.trim(),
-        bio: bio.trim(),
-        avatar: selectedAvatar,
+        name: values.name,
+        bio: values.bio.trim(),
+        avatar: values.avatar,
       });
       toast.add({
         title: "Profile updated",
@@ -152,37 +176,15 @@ export default function ProfilePage() {
         description: message,
         type: "error",
       });
-    } finally {
-      setIsSavingProfile(false);
     }
   };
 
-  // Change Password
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      toast.add({
-        title: "Passwords mismatch",
-        description: "New password and confirmation do not match.",
-        type: "error",
-      });
-      return;
-    }
-    if (newPassword.length < 6) {
-      toast.add({
-        title: "Password too short",
-        description: "Password must be at least 6 characters long.",
-        type: "error",
-      });
-      return;
-    }
-
-    setIsChangingPassword(true);
+  // Change Password. The mismatch and length checks that used to live here
+  // are now PasswordChangeSchema's job, so this only handles the request.
+  const onChangePassword = async (values: PasswordChangeValues) => {
     try {
-      await changePassword(currentPassword, newPassword);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+      await changePassword(values.currentPassword, values.newPassword);
+      resetPasswordForm();
       toast.add({
         title: "Password changed",
         description: "Your password has been successfully updated.",
@@ -196,8 +198,6 @@ export default function ProfilePage() {
         description: message,
         type: "error",
       });
-    } finally {
-      setIsChangingPassword(false);
     }
   };
 
@@ -320,7 +320,11 @@ export default function ProfilePage() {
 
             {/* Edit Profile Tab Panel */}
             <TabsContent value="profile" className="m-0">
-              <form onSubmit={handleSaveProfile} className="space-y-4">
+              <form
+                onSubmit={handleProfileSubmit(onSaveProfile)}
+                className="space-y-4"
+                noValidate
+              >
                 {/* Avatar Picker with Shadcn Buttons */}
                 <div className="space-y-2">
                   <Label className="text-xs font-medium text-muted-foreground block">
@@ -335,7 +339,11 @@ export default function ProfilePage() {
                           type="button"
                           variant="outline"
                           size="icon"
-                          onClick={() => setSelectedAvatar(icon)}
+                          onClick={() =>
+                            setProfileValue("avatar", icon, {
+                              shouldDirty: true,
+                            })
+                          }
                           className={cn(
                             "size-10 text-lg rounded-xl transition-all",
                             isSelected
@@ -360,11 +368,15 @@ export default function ProfilePage() {
                   <Input
                     id="display-name"
                     type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Luqman Hayyan"
                     className="text-sm"
+                    {...registerProfile("name")}
                   />
+                  {profileErrors.name && (
+                    <span className="text-sm text-destructive">
+                      {profileErrors.name.message}
+                    </span>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -377,11 +389,15 @@ export default function ProfilePage() {
                   <Input
                     id="bio"
                     type="text"
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
                     placeholder="e.g. Getting things done every day ✨"
                     className="text-sm"
+                    {...registerProfile("bio")}
                   />
+                  {profileErrors.bio && (
+                    <span className="text-sm text-destructive">
+                      {profileErrors.bio.message}
+                    </span>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -415,7 +431,11 @@ export default function ProfilePage() {
             {/* Security Tab Panel */}
             <TabsContent value="security" className="m-0 space-y-5">
               {/* Change Password */}
-              <form onSubmit={handleChangePassword} className="space-y-3">
+              <form
+                onSubmit={handlePasswordSubmit(onChangePassword)}
+                className="space-y-3"
+                noValidate
+              >
                 <div className="space-y-1">
                   <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <KeyRound className="size-3.5 text-primary" />
@@ -436,12 +456,15 @@ export default function ProfilePage() {
                   <Input
                     id="current-pwd"
                     type="password"
-                    required
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="••••••••"
                     className="text-sm"
+                    {...registerPassword("currentPassword")}
                   />
+                  {passwordErrors.currentPassword && (
+                    <span className="text-sm text-destructive">
+                      {passwordErrors.currentPassword.message}
+                    </span>
+                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -454,12 +477,15 @@ export default function ProfilePage() {
                   <Input
                     id="new-pwd"
                     type="password"
-                    required
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="At least 6 characters"
                     className="text-sm"
+                    {...registerPassword("newPassword")}
                   />
+                  {passwordErrors.newPassword && (
+                    <span className="text-sm text-destructive">
+                      {passwordErrors.newPassword.message}
+                    </span>
+                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -472,12 +498,15 @@ export default function ProfilePage() {
                   <Input
                     id="confirm-pwd"
                     type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
                     className="text-sm"
+                    {...registerPassword("confirmPassword")}
                   />
+                  {passwordErrors.confirmPassword && (
+                    <span className="text-sm text-destructive">
+                      {passwordErrors.confirmPassword.message}
+                    </span>
+                  )}
                 </div>
 
                 <div className="pt-1">
