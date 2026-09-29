@@ -4,7 +4,7 @@ import { Command } from "cmdk";
 import { AnimatePresence, motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import type { Task } from "@/pages/TodoPage";
+import type { Task } from "@/stores/taskStore";
 import {
   Plus,
   ListFilter,
