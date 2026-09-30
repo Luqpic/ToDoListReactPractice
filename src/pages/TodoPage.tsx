@@ -24,6 +24,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import AnimatedHeight from "../components/AnimatedHeight";
+import { useTaskStore } from "@/stores/taskStore";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,8 +59,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import logo from "../assets/Chatgpt.svg";
 import { Plus, GripVertical } from "lucide-react";
 
-import { useAuth } from "@/context/AuthContext";
-
 // Drop animation for dnd-kit's DragOverlay: fades the floating clone out
 // while it eases back to the dropped item's final position, instead of
 // popping away the instant the real list settles.
@@ -77,30 +76,20 @@ const dropAnimationConfig: DropAnimation = {
   }),
 };
 
-export interface Task {
-  id: number;
-  text: string;
-  completed: boolean;
-  dueDate?: string;
-}
-
-// Main screen: owns the task list itself, plus every derived and UI state
-// that depends on it. Everything else in the app (TaskList rows,
-// AnalyticsDashboard) is a child that reads this state via props or asks
-// this component to change it via callbacks — see README's "Task state and
-// lifting state up" for why.
+// Main screen. The task list itself and every change to it live in
+// useTaskStore (src/stores/taskStore.ts); this page keeps only UI state that
+// no other page needs: input text, search, filter, selection, drag state.
 export default function TodoPage() {
-  const { user } = useAuth();
-  // Guest tasks live in sessionStorage (gone once the tab closes) instead of
-  // localStorage (permanent), so a guest genuinely can't "save" their list.
-  const storageKey = `todo-tasks-${user!.id}`;
-  const storage = user!.isGuest ? sessionStorage : localStorage;
+  const task = useTaskStore((s) => s.tasks);
+  const addTask = useTaskStore((s) => s.add);
+  const deleteTask = useTaskStore((s) => s.remove);
+  const deleteTasks = useTaskStore((s) => s.removeMany);
+  const editTask = useTaskStore((s) => s.edit);
+  const toggleComplete = useTaskStore((s) => s.toggle);
+  const setDueDate = useTaskStore((s) => s.setDueDate);
+  const reorderTasks = useTaskStore((s) => s.reorder);
 
   const [input, setInput] = useState("");
-  const [task, setTask] = useState<Task[]>(() => {
-    const stored = storage.getItem(storageKey);
-    return stored ? JSON.parse(stored) : [];
-  });
   const [search, setSearch] = useState("");
 
   const [filter, setFilter] = useState("All");
@@ -163,7 +152,7 @@ export default function TodoPage() {
   const [showBulkDeleteAlert, setShowBulkDeleteAlert] = useState(false);
 
   const bulkDelete = () => {
-    setTask((prev) => prev.filter((t) => !selectedIds.has(t.id)));
+    deleteTasks(selectedIds);
     setShowBulkDeleteAlert(false);
     clearSelection();
   };
@@ -207,50 +196,8 @@ export default function TodoPage() {
     const overIdNum = over.id as number;
     const isGroupDrag = selectionMode && selectedIds.has(activeIdNum);
 
-    setTask((prev) => {
-      const movingIds = isGroupDrag
-        ? prev.filter((t) => selectedIds.has(t.id)).map((t) => t.id)
-        : [activeIdNum];
-
-      const remaining = prev.filter((t) => !movingIds.includes(t.id));
-      const moving = prev.filter((t) => movingIds.includes(t.id));
-
-      const overIndexInRemaining = remaining.findIndex(
-        (t) => t.id === overIdNum,
-      );
-
-      let insertAt: number;
-      if (overIndexInRemaining === -1) {
-        // Dropping onto another already-selected task (which was just
-        // filtered out of `remaining`) falls back to appending at the end.
-        // Known first-pass limitation — flagged in the spec for follow-up
-        // once this is tried out.
-        insertAt = remaining.length;
-      } else {
-        const overOriginalIndex = prev.findIndex((t) => t.id === overIdNum);
-        const movingOriginalIndices = movingIds.map((id) =>
-          prev.findIndex((t) => t.id === id),
-        );
-        const maxMovingOriginalIndex = Math.max(...movingOriginalIndices);
-        // Dragging strictly past every moving item (the drop target's
-        // original index is after all of them) lands the moved block
-        // immediately AFTER the target — this matches dnd-kit's
-        // arrayMove semantics for a plain forward single-item drag.
-        // Otherwise (a backward drag, or the target originally sitting
-        // between two moving items) the block lands immediately BEFORE
-        // the target.
-        insertAt =
-          overOriginalIndex > maxMovingOriginalIndex
-            ? overIndexInRemaining + 1
-            : overIndexInRemaining;
-      }
-
-      return [
-        ...remaining.slice(0, insertAt),
-        ...moving,
-        ...remaining.slice(insertAt),
-      ];
-    });
+    const movingIds = isGroupDrag ? selectedIds : new Set([activeIdNum]);
+    reorderTasks(movingIds, overIdNum);
   };
 
   // What's actually rendered: `task` narrowed by the active filter and
@@ -272,15 +219,9 @@ export default function TodoPage() {
       return new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime();
     });
 
-  // Persist on every change, to whichever backend this session uses.
-  useEffect(() => {
-    storage.setItem(storageKey, JSON.stringify(task));
-  }, [task, storageKey, storage]);
-
   const addtask = () => {
     if (input.trim() === "") return;
-    const newTask = { id: Date.now(), text: input, completed: false };
-    setTask([...task, newTask]);
+    const newTask = addTask(input);
     setInput("");
 
     const toastId = toast.add({
@@ -290,16 +231,11 @@ export default function TodoPage() {
       actionProps: {
         children: "Undo",
         onClick: () => {
-          setTask((prev) => prev.filter((t) => t.id !== newTask.id));
+          deleteTask(newTask.id);
           toast.close(toastId);
         },
       },
     });
-  };
-
-  const deleteTask = (taskId: number) => {
-    const updatedTasks = task.filter((task) => task.id !== taskId);
-    setTask(updatedTasks);
   };
 
   // Deletion goes through a confirmation dialog: `taskToDelete` holds the
@@ -312,30 +248,6 @@ export default function TodoPage() {
       deleteTask(taskToDelete);
       setTaskToDelete(null);
     }
-  };
-
-  const editTask = (taskId: number, newText: string) => {
-    const updatedTasks = task.map((task) => {
-      if (task.id === taskId) {
-        return { ...task, text: newText };
-      }
-      return task;
-    });
-    setTask(updatedTasks);
-  };
-
-  const toggleComplete = (taskId: number) => {
-    const updatedTasks = task.map((task) =>
-      task.id === taskId ? { ...task, completed: !task.completed } : task,
-    );
-    setTask(updatedTasks);
-  };
-
-  const setDueDate = (taskId: number, dueDate: string | undefined) => {
-    const updatedTasks = task.map((task) =>
-      task.id === taskId ? { ...task, dueDate } : task,
-    );
-    setTask(updatedTasks);
   };
 
   return (

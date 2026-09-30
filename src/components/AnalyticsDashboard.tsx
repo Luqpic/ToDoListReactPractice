@@ -1,5 +1,5 @@
 import { Progress } from "@/components/ui/progress";
-import type { Task } from "../pages/TodoPage";
+import type { Task } from "@/stores/taskStore";
 
 interface AnalyticsDashboardProps {
   tasks: Task[];

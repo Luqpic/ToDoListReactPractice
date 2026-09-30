@@ -34,7 +34,7 @@ import {
 import { toast } from "@/components/ui/toast";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
-import type { Task } from "./TodoPage";
+import { useTaskStore } from "@/stores/taskStore";
 import {
   User as UserIcon,
   LogOut,
@@ -107,20 +107,9 @@ export default function ProfilePage() {
     resolver: zodResolver(PasswordChangeSchema),
   });
 
-  // Task Storage Key & tasks state
-  const storageKey = `todo-tasks-${user?.id}`;
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    if (!user?.id) return [];
-    try {
-      const stored = localStorage.getItem(`todo-tasks-${user.id}`);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  // Stats calculation
-  const totalTasks = tasks.length;
+  // Same list TodoPage shows, read from the shared task store.
+  const totalTasks = useTaskStore((s) => s.tasks.length);
+  const clearTasks = useTaskStore((s) => s.clear);
 
   // Joined date formatting
   const joinedDate = (() => {
@@ -203,8 +192,7 @@ export default function ProfilePage() {
 
   // Reset all tasks
   const handleResetTasks = () => {
-    localStorage.removeItem(storageKey);
-    setTasks([]);
+    clearTasks();
     setShowResetTasksAlert(false);
     toast.add({
       title: "All tasks reset",
